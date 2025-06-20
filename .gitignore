@@ -1,4 +1,4 @@
-logs/*
+/logs/*
 *__pycache__/*
-.venv/*
-tests/logs/*
+/.venv/*
+/tests/logs/*
