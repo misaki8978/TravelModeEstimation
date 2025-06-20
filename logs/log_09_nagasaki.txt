@@ -1,0 +1,177 @@
+Saved weekly_gps.csv with 1116056 rows / 1116056 rows.
+Saved weekly_gps.csv with 1115070 rows / 1115070 rows.
+Saved weekly_gps.csv with 1115315 rows / 1115315 rows.
+Saved weekly_gps.csv with 1114440 rows / 1114440 rows.
+Saved weekly_gps.csv with 1114035 rows / 1114035 rows.
+Saved weekly_gps.csv with 1115232 rows / 1115232 rows.
+Saved weekly_gps.csv with 1115492 rows / 1115492 rows.
+Saved weekly_gps.csv with 1116865 rows / 1116865 rows.
+Saved weekly_gps.csv with 1115762 rows / 1115762 rows.
+Saved weekly_gps.csv with 1116436 rows / 1116436 rows.
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: BLWSakigake
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019b
+place: 09_nagasaki, year: 2019, input_folder: 09_nagasaki_2019
+Saved weekly_gps.csv with 1116436 rows / 1116436 rows.
+Saved weekly_gps.csv with 1116865 rows / 1116865 rows.
+Saved weekly_gps.csv with 1114035 rows / 1114035 rows.
+Saved weekly_gps.csv with 1115492 rows / 1115492 rows.
+Saved weekly_gps.csv with 1114440 rows / 1114440 rows.
+Saved weekly_gps.csv with 1115232 rows / 1115232 rows.
+Saved weekly_gps.csv with 1115070 rows / 1115070 rows.
+Saved weekly_gps.csv with 1115762 rows / 1115762 rows.
+Saved weekly_gps.csv with 1116056 rows / 1116056 rows.
+Saved weekly_gps.csv with 1115315 rows / 1115315 rows.
+Saved weekly_gps.csv with 1151792 rows / 1151792 rows.
+Saved weekly_gps.csv with 1600000 rows / 2551794 rows.
+Saved weekly_gps.csv with 1600000 rows / 3981310 rows.
+Saved weekly_gps.csv with 1600000 rows / 4595605 rows.
+Saved weekly_gps.csv with 1600000 rows / 5217685 rows.
+Saved weekly_gps.csv with 1600000 rows / 2838604 rows.
+Saved weekly_gps.csv with 951794 rows / 2551794 rows.
+Saved weekly_gps.csv with 1600000 rows / 5072478 rows.
+Saved weekly_gps.csv with 1600000 rows / 5140459 rows.
+Saved weekly_gps.csv with 1600000 rows / 4128532 rows.
+Saved weekly_gps.csv with 1600000 rows / 3981310 rows.
+Saved weekly_gps.csv with 1238604 rows / 2838604 rows.
+Saved weekly_gps.csv with 1600000 rows / 4595605 rows.
+Saved weekly_gps.csv with 1600000 rows / 5217685 rows.
+Saved weekly_gps.csv with 781310 rows / 3981310 rows.
+Saved weekly_gps.csv with 1600000 rows / 5072478 rows.
+Saved weekly_gps.csv with 1600000 rows / 5140459 rows.
+Saved weekly_gps.csv with 1116436 rows / 1116436 rows.
+Saved weekly_gps.csv with 1115232 rows / 1115232 rows.
+Saved weekly_gps.csv with 1114440 rows / 1114440 rows.
+Saved weekly_gps.csv with 1116865 rows / 1116865 rows.
+Saved weekly_gps.csv with 1115492 rows / 1115492 rows.
+Saved weekly_gps.csv with 1115762 rows / 1115762 rows.
+Saved weekly_gps.csv with 1114035 rows / 1114035 rows.
+Saved weekly_gps.csv with 1115315 rows / 1115315 rows.
+Saved weekly_gps.csv with 1116056 rows / 1116056 rows.
+Saved weekly_gps.csv with 1115070 rows / 1115070 rows.
+Saved weekly_gps.csv with 1151792 rows / 1151792 rows.
+Saved weekly_gps.csv with 1600000 rows / 2551794 rows.
+Saved weekly_gps.csv with 1600000 rows / 3981310 rows.
+Saved weekly_gps.csv with 1600000 rows / 4595605 rows.
+Saved weekly_gps.csv with 951794 rows / 2551794 rows.
+Saved weekly_gps.csv with 1600000 rows / 2838604 rows.
+Saved weekly_gps.csv with 1600000 rows / 5163874 rows.
+Saved weekly_gps.csv with 1600000 rows / 5217685 rows.
+Saved weekly_gps.csv with 1600000 rows / 5140459 rows.
+Saved weekly_gps.csv with 1600000 rows / 4128532 rows.
+Saved weekly_gps.csv with 1238604 rows / 2838604 rows.
+Saved weekly_gps.csv with 1600000 rows / 3981310 rows.
+Saved weekly_gps.csv with 1600000 rows / 4595605 rows.
+Saved weekly_gps.csv with 1600000 rows / 5163874 rows.
+Saved weekly_gps.csv with 1600000 rows / 5217685 rows.
+Saved weekly_gps.csv with 781310 rows / 3981310 rows.
+Saved weekly_gps.csv with 1600000 rows / 5140459 rows.
+Saved weekly_gps.csv with 1395605 rows / 4595605 rows.
+Saved weekly_gps.csv with 1600000 rows / 5163874 rows.
+Saved weekly_gps.csv with 1600000 rows / 5072478 rows.
+Saved weekly_gps.csv with 1600000 rows / 4128532 rows.
+Saved weekly_gps.csv with 1600000 rows / 5217685 rows.
+Saved weekly_gps.csv with 1600000 rows / 5140459 rows.
+Saved weekly_gps.csv with 363874 rows / 5163874 rows.
+Saved weekly_gps.csv with 417685 rows / 5217685 rows.
+Saved weekly_gps.csv with 340459 rows / 5140459 rows.
+Saved weekly_gps.csv with 928532 rows / 4128532 rows.
+Saved weekly_gps.csv with 1600000 rows / 5072478 rows.
+Saved weekly_gps.csv with 1600000 rows / 5072478 rows.
+Saved weekly_gps.csv with 272478 rows / 5072478 rows.

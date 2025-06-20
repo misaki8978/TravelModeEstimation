@@ -1,0 +1,124 @@
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'lat_next'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 55, in <module>
+    move_summary = func_move_summary(speed_GPS)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 115, in func_move_summary
+    move_summary = move_df.assign(
+                   ^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 5239, in assign
+    data[k] = com.apply_if_callable(v, data)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/common.py", line 384, in apply_if_callable
+    return maybe_callable(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 118, in <lambda>
+    segment_distance=lambda x: x.apply(lambda row: haversine_distance(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+           ^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 123, in <lambda>
+    ) if pd.notna(row['lat_next']) else 0, axis=1),
+                  ~~~^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 1121, in __getitem__
+    return self._get_value(key)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 1237, in _get_value
+    loc = self.index.get_loc(label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'lat_next'
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 55, in <module>
+    move_summary = func_move_summary(speed_GPS)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 116, in func_move_summary
+    .assign(
+     ^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/groupby/groupby.py", line 1363, in __getattr__
+    raise AttributeError(
+AttributeError: 'DataFrameGroupBy' object has no attribute 'assign'
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 15, in <module>
+    from stay_func import haversine_distance, compute_diameter, extract_stays_fast, run_dbscan_on_stays, assign_stay_ids, stay_to_move, func_move_summary, speed_calc, stay_detection
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 131
+    move_summary = move_df.groupby('move_id')\
+    ^^^^^^^^^^^^
+SyntaxError: invalid syntax
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 15, in <module>
+    from stay_func import haversine_distance, compute_diameter, extract_stays_fast, run_dbscan_on_stays, assign_stay_ids, stay_to_move, func_move_summary, speed_calc, stay_detection
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 131
+    move_summary = move_df.groupby('move_id')\
+    ^^^^^^^^^^^^
+SyntaxError: invalid syntax
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 15, in <module>
+    from stay_func import haversine_distance, compute_diameter, extract_stays_fast, run_dbscan_on_stays, assign_stay_ids, stay_to_move, func_move_summary, speed_calc, stay_detection
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 131
+    move_summary = (
+    ^^^^^^^^^^^^
+SyntaxError: invalid syntax
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 15, in <module>
+    from stay_func import haversine_distance, compute_diameter, extract_stays_fast, run_dbscan_on_stays, assign_stay_ids, stay_to_move, func_move_summary, speed_calc, stay_detection
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 131
+    move_summary = (
+    ^^^^^^^^^^^^
+SyntaxError: invalid syntax
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 58, in <module>
+    move_summary = func_move_summary(speed_GPS)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 132, in func_move_summary
+    .agg(
+     ^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/groupby/generic.py", line 1422, in aggregate
+    relabeling, func, columns, order = reconstruct_func(func, **kwargs)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1696, in reconstruct_func
+    raise TypeError("Must provide 'func' or tuples of '(column, aggfunc).")
+TypeError: Must provide 'func' or tuples of '(column, aggfunc).
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 58, in <module>
+    move_summary = func_move_summary(speed_GPS)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/src/stay_func.py", line 116, in func_move_summary
+    .agg(
+     ^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/groupby/generic.py", line 1422, in aggregate
+    relabeling, func, columns, order = reconstruct_func(func, **kwargs)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1696, in reconstruct_func
+    raise TypeError("Must provide 'func' or tuples of '(column, aggfunc).")
+TypeError: Must provide 'func' or tuples of '(column, aggfunc).
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py", line 58, in <module>
+    stays.append(stays)
+    ^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/generic.py", line 6299, in __getattr__
+    return object.__getattribute__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DataFrame' object has no attribute 'append'. Did you mean: '_append'?

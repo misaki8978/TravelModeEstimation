@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "fukui",
+			"path": "../../../data/fukui"
+		},
+		{
+			"name": "TravelModeEstimation",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,182 @@
+/usr/sge/default/Claudette/job_scripts/15837: line 20: /home/data/fukui/interim/chunks/data_10/chunk_001: No such file or directory
+  File "/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py", line 30
+    .groupby(
+IndentationError: unexpected indent
+/usr/sge/default/Claudette/job_scripts/15838: line 20: /home/data/fukui/interim/chunks/data_10/chunk_001: No such file or directory
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py", line 10, in <module>
+    folder_name = os.path.basename(os.path.dirname(file_list[0]))
+                                                   ~~~~~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 231, in resolve
+    return self.resolvers[key]
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/fukui/.pyenv/versions/3.12.10/lib/python3.12/collections/__init__.py", line 1015, in __getitem__
+    return self.__missing__(key)            # support subclasses that define __missing__
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/.pyenv/versions/3.12.10/lib/python3.12/collections/__init__.py", line 1007, in __missing__
+    raise KeyError(key)
+KeyError: 'null'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 242, in resolve
+    return self.temps[key]
+           ~~~~~~~~~~^^^^^
+KeyError: 'null'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py", line 24, in <module>
+    .query('hashed_adid is not null')\
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4823, in query
+    res = self.eval(expr, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4949, in eval
+    return _eval(expr, inplace=inplace, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/eval.py", line 336, in eval
+    parsed_expr = Expr(expr, engine=engine, parser=parser, env=env)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 805, in __init__
+    self.terms = self.parse()
+                 ^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 824, in parse
+    return self._visitor.visit(self.expr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 417, in visit_Module
+    return self.visit(expr, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 420, in visit_Expr
+    return self.visit(node.value, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 715, in visit_Compare
+    return self.visit(binop)
+           ^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 531, in visit_BinOp
+    op, op_class, left, right = self._maybe_transform_eq_ne(node)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 453, in _maybe_transform_eq_ne
+    right = self.visit(node.right, side="right")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 541, in visit_Name
+    return self.term_type(node.id, self.env, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/ops.py", line 91, in __init__
+    self._value = self._resolve_name()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/ops.py", line 115, in _resolve_name
+    res = self.env.resolve(local_name, is_local=is_local)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 244, in resolve
+    raise UndefinedVariableError(key, is_local) from err
+pandas.errors.UndefinedVariableError: name 'null' is not defined
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 231, in resolve
+    return self.resolvers[key]
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/fukui/.pyenv/versions/3.12.10/lib/python3.12/collections/__init__.py", line 1015, in __getitem__
+    return self.__missing__(key)            # support subclasses that define __missing__
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/.pyenv/versions/3.12.10/lib/python3.12/collections/__init__.py", line 1007, in __missing__
+    raise KeyError(key)
+KeyError: 'null'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 242, in resolve
+    return self.temps[key]
+           ~~~~~~~~~~^^^^^
+KeyError: 'null'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py", line 24, in <module>
+    .query('hashed_adid is not null')\
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4823, in query
+    res = self.eval(expr, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4949, in eval
+    return _eval(expr, inplace=inplace, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/eval.py", line 336, in eval
+    parsed_expr = Expr(expr, engine=engine, parser=parser, env=env)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 805, in __init__
+    self.terms = self.parse()
+                 ^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 824, in parse
+    return self._visitor.visit(self.expr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 417, in visit_Module
+    return self.visit(expr, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 420, in visit_Expr
+    return self.visit(node.value, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 715, in visit_Compare
+    return self.visit(binop)
+           ^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 531, in visit_BinOp
+    op, op_class, left, right = self._maybe_transform_eq_ne(node)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 453, in _maybe_transform_eq_ne
+    right = self.visit(node.right, side="right")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 411, in visit
+    return visitor(node, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/expr.py", line 541, in visit_Name
+    return self.term_type(node.id, self.env, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/ops.py", line 91, in __init__
+    self._value = self._resolve_name()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/ops.py", line 115, in _resolve_name
+    res = self.env.resolve(local_name, is_local=is_local)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fukui/workspace/TravelModeEstimation/.venv/lib/python3.12/site-packages/pandas/core/computation/scope.py", line 244, in resolve
+    raise UndefinedVariableError(key, is_local) from err
+pandas.errors.UndefinedVariableError: name 'null' is not defined
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')

@@ -1,0 +1,1 @@
+/usr/sge/default/Cheryl/job_scripts/15870: line 21: 347805 Killed                  python3 /home/fukui/workspace/TravelModeEstimation/scripts/03_frequency/gps_sample.py "${FILES[@]}"

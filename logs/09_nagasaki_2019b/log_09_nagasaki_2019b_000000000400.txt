@@ -1,0 +1,1 @@
+Saved weekly_user_counts.csv with 562987 rows / 562987 rows.

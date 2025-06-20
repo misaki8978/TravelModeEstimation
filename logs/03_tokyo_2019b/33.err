@@ -1,0 +1,1 @@
+/usr/sge/default/David/job_scripts/15868: line 21: 394024 Killed                  python3 /home/fukui/workspace/TravelModeEstimation/scripts/03_frequency/gps_sample.py "${FILES[@]}"

@@ -1,0 +1,4 @@
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+/home/fukui/workspace/TravelModeEstimation/tests/gps_sample.py:28: PerformanceWarning: Adding/subtracting object-dtype array to TimedeltaArray not vectorized.
+  week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')

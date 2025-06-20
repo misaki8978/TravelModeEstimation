@@ -1,0 +1,19 @@
+                                  week_start
+hashed_adid                                 
+001b1f3e395b211521059b66308c57f6           1
+001dd51065e3609294205bf0f18fe084           4
+0022a8a5417281834067313a6c8b886b           6
+008012dbf8257290b19981e580078bf3           1
+0096121b2a0e20f250ec28c260101adc           1
+                                  week_start
+hashed_adid                                 
+51a6f32edc79cb522fc4c49d5c61ffdb           1
+51e40a1bc6884f3aa2fd656619387bb1           1
+51e81c72f4ca856d0dca832f7b7d2389           1
+52a012eaa6d001a064b7c2be2feb7f76           1
+59d72c075238c546c8ebc299b41dca35           1
+ファイル /home/data/fukui/interim/filter/09_nagasaki/2019_weekly/user_counts_4500/*summary.csv.gz が見つかりませんでした。
+ファイル /home/data/fukui/interim/filter/09_nagasaki/2019_weekly/user_counts_4500/*summary.csv.gz が見つかりませんでした。
+ファイル /home/data/fukui/interim/filter/09_nagasaki/2019_weekly/user_counts_4500/*summary.csv.gz が見つかりませんでした。
+ファイル /home/data/fukui/interim/filter/09_nagasaki/2019_weekly/user_counts_4500/*summary.csv.gz が見つかりませんでした。
+ファイル /home/data/fukui/interim/filter/09_nagasaki/2019_weekly/user_counts_4500/*.csv.gz が見つかりませんでした。

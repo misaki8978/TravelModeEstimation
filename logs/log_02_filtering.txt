@@ -1,0 +1,12 @@
+Saved 2019-02_sorted_gps_data.csv.gz with 1371153 rows.
+Saved 2019-03_sorted_gps_data.csv.gz with 1507576 rows.
+Saved 2019-04_sorted_gps_data.csv.gz with 3979076 rows.
+Saved 2019-11_sorted_gps_data.csv.gz with 2120945 rows.
+Saved 2019-12_sorted_gps_data.csv.gz with 2175953 rows.
+Saved 2019-01_sorted_gps_data.csv.gz with 1395578 rows.
+Saved 2019-05_sorted_gps_data.csv.gz with 5656701 rows.
+Saved 2019-06_sorted_gps_data.csv.gz with 5431295 rows.
+Saved 2019-07_sorted_gps_data.csv.gz with 7861837 rows.
+Saved 2019-08_sorted_gps_data.csv.gz with 8760757 rows.
+Saved 2019-09_sorted_gps_data.csv.gz with 7961781 rows.
+Saved 2019-10_sorted_gps_data.csv.gz with 2774184 rows.
