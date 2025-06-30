@@ -1,4 +1,8 @@
 /logs/*
 *__pycache__/*
-/.venv/*
+/.venv/
 /tests/logs/*
+/archive/*
+*.code-workspace*
+.envrc
+env.sh
