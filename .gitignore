@@ -1,5 +1,5 @@
 /logs/*
-*__pycache__/*
+/scripts/src/__pycache__/*
 /.venv/
 /tests/logs/*
 /archive/*
