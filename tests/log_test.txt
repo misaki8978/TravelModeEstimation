@@ -1,0 +1,12 @@
+Saved weekly_user_counts.csv with 1600000 rows / 1708623 rows.
+Saved weekly_user_counts.csv with 1600000 rows / 1707046 rows.
+Saved weekly_user_counts.csv with 108623 rows / 1708623 rows.
+Saved weekly_user_counts.csv with 107046 rows / 1707046 rows.
+Saved weekly_user_counts.csv with 1600000 rows / 1708520 rows.
+Saved weekly_user_counts.csv with 108520 rows / 1708520 rows.
+Saved weekly_user_counts.csv with 1600000 rows / 1708623 rows.
+Saved weekly_user_counts.csv with 1600000 rows / 1707046 rows.
+Saved weekly_user_counts.csv with 108623 rows / 1708623 rows.
+Saved weekly_user_counts.csv with 107046 rows / 1707046 rows.
+Saved weekly_user_counts.csv with 1600000 rows / 1708520 rows.
+Saved weekly_user_counts.csv with 108520 rows / 1708520 rows.
