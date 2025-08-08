@@ -17,7 +17,7 @@ from math import radians, sin, cos, sqrt, atan2
 
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
-from segment_analysis_func import make_user_stats, make_normal_df, plot_velocity_distribution, plot_speed_comparison, plot_heatmap, plot_velocity_acceleration, plot_mesh_heatmap_by_points, make_seg_features, plot_ratio_by_user
+from segment_analysis_func import plot_velocity_distribution, plot_mesh_heatmap_by_points, make_seg_features, make_normal_df, make_user_stats
 
 warnings.filterwarnings('ignore')
 
@@ -34,8 +34,10 @@ year = path_parts[-1]
 place_ = path_parts[-2]
 place = "_".join(place_.split("_")[2:])
 
-OUT_DIR = f"/home/data/fukui/outputs/figures/{place}/{year}/03_"
+OUT_DIR = f"/home/data/fukui/outputs/figures/{place}/{year}/03_segment_analysis/"
+OUT_DATA = f"/home/data/fukui/processed/01_03_segment_analysis/{place}/{year}_weekly/"
 os.makedirs(OUT_DIR, exist_ok=True)
+os.makedirs(OUT_DATA, exist_ok=True)
 
 df_list = []
 for file in files:
@@ -51,18 +53,24 @@ df_segment = pd.concat(df_list)
 # log_message(f"{df_segment.shape[0]} rows", message_path)
 # log_message(f"{df_segment.select_dtypes(include='object').describe(include='all')}", message_path)
 # log_message(f"{df_segment.select_dtypes(include='number').describe(include='all')}", message_path)
-df_segment, df_normal, df_speed = make_seg_features(df_segment)
-log_message(f"{df_normal.shape[0]} rows", message_path)
-log_message(f"{df_normal.select_dtypes(include='object').describe(include='all')}", message_path)
-log_message(f"{df_normal.select_dtypes(include='number').describe(include='all')}", message_path)
-plot_ratio_by_user(df_normal, OUT_DIR)
-# seg_normal = make_user_stats(df_segment, OUT_DIR)
-# normal_df, speed_df = make_normal_df(df_segment, seg_normal)
-plot_velocity_distribution(df_normal, OUT_DIR)
+# seg_segment, seg_normal, seg_speed = make_seg_features(df_segment)
+# log_message(f"{seg_normal.shape[0]} rows", message_path)
+# log_message(f"{seg_normal.select_dtypes(include='object').describe(include='all')}", message_path)
+# log_message(f"{seg_normal.select_dtypes(include='number').describe(include='all')}", message_path)
+# plot_ratio_by_user(df_normal, OUT_DIR)
+seg_normal = make_user_stats(df_segment, OUT_DIR)
+log_message(f"{len(seg_normal)} rows", message_path)
+log_message(f'{len(seg_normal.query('label == "non-walk"'))}', message_path)
+log_message(f'{len(seg_normal.query('label == "walk"'))}', message_path)
+
+normal_df, speed_df = make_normal_df(df_segment, seg_normal)
+plot_velocity_distribution(seg_normal, OUT_DIR)
+
+seg_normal.to_csv(f"{OUT_DATA}/seg_normal.csv.gz", index=False, compression="gzip")
 # plot_speed_comparison(speed_df, OUT_DIR)
 
-# file_name = "all"
-# plot_heatmap(normal_df, file_name, OUT_DIR) # 適宜変更
+file_name = "all"
+# plot_heatmap(df_normal, file_name, OUT_DIR) # 適宜変更
 
 # plot_velocity_acceleration(seg_normal, OUT_DIR)
-# plot_mesh_heatmap_by_points(normal_df, file_name, OUT_DIR)
+plot_mesh_heatmap_by_points(normal_df, file_name, OUT_DIR)

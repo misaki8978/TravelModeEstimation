@@ -4,11 +4,12 @@
 #$ -cwd
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@David
-#$ -pe smp 8
+#$ -q all.q@Cheryl
+#$ -pe smp 9
 #$ -t 1-__NUM__
-#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
-#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
+#$ -tc 5
+#$ -o logs/04_stay_replay/$TASK_ID.out
+#$ -e logs/04_stay_replay/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
 

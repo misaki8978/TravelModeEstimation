@@ -42,7 +42,7 @@ for file in files:
         log_message(f"ファイル {file} が見つかりませんでした。", message_path)
 
 combined_stays = pd.concat(weekly_records, ignore_index=True)
-
+log_message(f"{combined_stays.shape[0]} rows", message_path)
 
 
 # サブプロットの作成

@@ -43,6 +43,12 @@ for file in files:
 
 df = pd.concat(weekly_records, ignore_index=True)
 
+log_message(f"{df.shape[0]} rows", message_path)
+log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
+log_message(f"{df['count'].sum()} GPS points", message_path)
+log_message(f"{len(df['hashed_adid'].unique())} users", message_path)
+
+
 # 週ごとのアクティブユーザー数
 weekly_active = df.filter(items=['week_start', 'hashed_adid'])\
                   .groupby(by=['week_start']).nunique()
@@ -118,9 +124,9 @@ ax_user.scatter(
             color='blue'
             )
 
-ax_user.set_title(f"{year_only} weekly count vs GPS points per user")
-ax_user.set_xlabel("weekly count")
-ax_user.set_ylabel("GPS points")
+ax_user.set_title(f"{year_only} Total GPS Points by Number of Active Weeks", fontsize=17)
+ax_user.set_xlabel("Annual Appearance Weeks", fontsize=15)
+ax_user.set_ylabel("Total GPS Points", fontsize=15)
 
 ax_user.set_yscale('log')
 

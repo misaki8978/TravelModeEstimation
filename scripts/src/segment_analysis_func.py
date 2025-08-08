@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,17 +8,28 @@ import geopandas as gpd
 import datashader as ds
 import datashader.transfer_functions as tf
 from datashader.colors import inferno
-from shapely.geometry import LineString
+from shapely.geometry import LineString, box, Point
 import contextily as ctx
 import shapely
 
 from datashader.transfer_functions import dynspread
 from math import radians, sin, cos, sqrt, atan2
 
+sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
+from log_message import log_message
+
 warnings.filterwarnings('ignore')
-plt.rcParams['font.family'] = 'Meiryo'
+# plt.rcParams['font.family'] = 'Meiryo'
+message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_01_segment_analysis.txt"
 
 
+def calculate_bearing(lat1, lon1, lat2, lon2):
+    # ラジアンに変換
+    # lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
+    d_lon = lon2 - lon1
+    y = np.sin(d_lon) * np.cos(lat2)
+    x = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(d_lon)
+    return np.arctan2(y, x) 
 
 # =============================================
 # 1.  セグメント単位統計
@@ -34,18 +46,29 @@ def make_seg_features(df_segment):
                                                                                             row['lon_next']
                                                                                             ),
                                                                 axis='columns'
-                                                                )
+                                                                ),
+                                    bearing = lambda x: x.apply(
+                                        lambda row: calculate_bearing(
+                                                                        row['latitude_anonymous'], 
+                                                                        row['longitude_anonymous'], 
+                                                                        row['lat_next'], 
+                                                                        row['lon_next']
+                                        ) if pd.notnull(row['lat_next']) and pd.notnull(row['lon_next']) else np.nan,
+                                        axis=1
+                                       ),
                                     )\
                                     .groupby(['hashed_adid', 'move_id', 'segment_id'], as_index=False)\
                                     .agg(
                                         n_points     = ('datetime', 'count'),
                                         mean_vel     = ('speed', 'mean'),
+                                        min_vel      = ('speed', 'min'),
                                         max_vel      = ('speed', 'max'),
                                         mean_acc     = ('acceleration', 'mean'),
                                         max_acc      = ('acceleration', 'max'),
                                         total_distance = ('distance', 'sum'),
                                         duration_sec = ('datetime', lambda x: (x.max() - x.min()).total_seconds()),
-                                        label        = ('label', 'first')
+                                        label        = ('label', 'first'),
+                                        bearing_rate_rad = ('bearing', lambda b: np.mean(np.abs(np.diff(b.dropna().values))) if len(b.dropna()) >= 2 else np.nan)
                                     )\
                                     .reset_index()
 
@@ -365,57 +388,57 @@ def plot_speed_comparison(speed_df_hikaku, OUT_DIR):
     plt.savefig(f'{OUT_DIR}speed_comparison.png', dpi=300)
 
 # segment heatmap
-def plot_heatmap(df, file_name, OUT_DIR):
+# def plot_heatmap(df, file_name, OUT_DIR):
 
-    if df.empty:
-        return
+    # if df.empty:
+    #     return
     
-    # 緯度経度 → geometry（必要ならソート）
-    lines = []
-    # speeds = []
-    for (uid, move_id, seg_id), group in df.groupby(["hashed_adid", "move_id", "segment_id"]):
-        points = list(zip(group["longitude_anonymous"], group["latitude_anonymous"]))
-        if len(points) >= 2:
-            lines.append(LineString(points))
+    # # 緯度経度 → geometry（必要ならソート）
+    # lines = []
+    # # speeds = []
+    # for (uid, move_id, seg_id), group in df.groupby(["hashed_adid", "move_id", "segment_id"]):
+    #     points = list(zip(group["longitude_anonymous"], group["latitude_anonymous"]))
+    #     if len(points) >= 2:
+    #         lines.append(LineString(points))
 
-            # ここで各セグメントの代表的な速度を計算（例：平均速度）
-            # speeds.append(group["speed"])
-    # print(len(lines))
+    #         # ここで各セグメントの代表的な速度を計算（例：平均速度）
+    #         # speeds.append(group["speed"])
+    # # print(len(lines))
 
-    gdf = gpd.GeoDataFrame(geometry=lines, crs="EPSG:4326")  # 緯度経度系
+    # gdf = gpd.GeoDataFrame(geometry=lines, crs="EPSG:4326")  # 緯度経度系
 
-    # 2. 投影変換（地図と一致させるためEPSG:3857）
-    gdf = gdf.to_crs(epsg=3857)
+    # # 2. 投影変換（地図と一致させるためEPSG:3857）
+    # gdf = gdf.to_crs(epsg=3857)
 
-    # 3. Datashaderでレンダリング
-    # bounds定義（全範囲）
-    x_range, y_range = ((gdf.bounds.minx.min()-1500, gdf.bounds.maxx.max()+1500),
-                        (gdf.bounds.miny.min()-1500, gdf.bounds.maxy.max()+1500))
+    # # 3. Datashaderでレンダリング
+    # # bounds定義（全範囲）
+    # x_range, y_range = ((gdf.bounds.minx.min()-1500, gdf.bounds.maxx.max()+1500),
+    #                     (gdf.bounds.miny.min()-1500, gdf.bounds.maxy.max()+1500))
 
-    canvas = ds.Canvas(plot_width=1500, plot_height=1500,
-                    x_range=x_range, y_range=y_range)
+    # canvas = ds.Canvas(plot_width=1500, plot_height=1500,
+    #                 x_range=x_range, y_range=y_range)
 
-    agg = canvas.line(gdf, geometry="geometry", agg=ds.count())
+    # agg = canvas.line(gdf, geometry="geometry", agg=ds.count())
 
-    # 4. 画像として濃淡表示
+    # # 4. 画像として濃淡表示
 
 
-    img = tf.shade(agg, cmap=inferno, how="eq_hist")
-    img = dynspread(img, threshold=0.5, max_px=3)
-    # img = tf.shade(agg, cmap=["blue", "red"], how="log")
+    # img = tf.shade(agg, cmap=inferno, how="eq_hist")
+    # img = dynspread(img, threshold=0.5, max_px=3)
+    # # img = tf.shade(agg, cmap=["blue", "red"], how="log")
 
-    # 5. Matplotlibで背景地図と合成
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(img.to_pil(), extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='upper')
+    # # 5. Matplotlibで背景地図と合成
+    # fig, ax = plt.subplots(figsize=(12, 12))
+    # ax.imshow(img.to_pil(), extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='upper')
 
-    # 背景タイル（OpenStreetMap）
-    ctx.add_basemap(ax, alpha=0.4)
+    # # 背景タイル（OpenStreetMap）
+    # ctx.add_basemap(ax, alpha=0.4)
 
-    # 表示調整
-    ax.set_axis_off()
-    ax.set_title(f"Segment Trajectory Frequency {file_name}", fontsize=16)
-    plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}segment_trajectory_{file_name}.png')
+    # # 表示調整
+    # ax.set_axis_off()
+    # ax.set_title(f"Segment Trajectory Frequency {file_name}", fontsize=16)
+    # plt.tight_layout()
+    # plt.savefig(f'{OUT_DIR}segment_trajectory_{file_name}.png')
 
 def plot_velocity_acceleration(seg_normal, OUT_DIR):
     fig, ax = plt.subplots(figsize=(12, 7))
@@ -432,83 +455,106 @@ def plot_velocity_acceleration(seg_normal, OUT_DIR):
     plt.savefig(f'{OUT_DIR}velocity_acceleration.png', dpi=300)
 
 # メッシュ単位でセグメントの通過回数をヒートマップとして可視化
-def plot_mesh_heatmap_by_points(df, file_name, OUT_DIR, cell_size=500):
-    # 1) ポイント単位の GeoDataFrame を作成し、メーター系に変換
-    pts = gpd.GeoDataFrame(
+def plot_mesh_heatmap_by_points(df, file_name, OUT_DIR):
+    gdf = gpd.GeoDataFrame(
         df,
-        geometry=gpd.points_from_xy(df.longitude_anonymous, df.latitude_anonymous),
-        crs="EPSG:4326"
-    ).to_crs(epsg=3857)
+        geometry=gpd.points_from_xy(df['longitude_anonymous'], df['latitude_anonymous']),
+        crs="EPSG:4326"  # WGS84
+    )
+    log_message(f"{gdf.shape[0]} rows", message_path)
 
-    # 2) メッシュセルの作成（既存コードと同じ）
-    xmin, ymin, xmax, ymax = pts.total_bounds
-    xmin, ymin, xmax, ymax = xmin - cell_size, ymin - cell_size, xmax + cell_size, ymax + cell_size
-    x_coords = np.arange(xmin, xmax, cell_size)
-    y_coords = np.arange(ymin, ymax, cell_size)
-    cells = [
-        shapely.geometry.box(float(x), float(y), float(x+cell_size), float(y+cell_size))
-        for x in x_coords for y in y_coords
-    ]
-    mesh = gpd.GeoDataFrame({'geometry': cells}, crs="EPSG:3857")
+    # 投影変換 (Web Mercator: EPSG:3857)
+    gdf = gdf.to_crs(epsg=3857)
 
-    # 3) ポイントとメッシュを空間結合してセル内ポイント数をカウント
-    joined = gpd.sjoin(pts, mesh, how='inner', predicate='within')
+    # --- メッシュ作成 ---
+    mesh_size = 125  # メッシュサイズ（例: 500m）
+    bounds = gdf.total_bounds  # [minx, miny, maxx, maxy]
+    xmin, ymin, xmax, ymax = bounds
+
+    # メッシュを生成
+    cols = list(range(int(xmin), int(xmax), mesh_size))
+    rows = list(range(int(ymin), int(ymax), mesh_size))
+
+    polygons = []
+    for x in cols:
+        for y in rows:
+            polygons.append(box(x, y, x + mesh_size, y + mesh_size))
+
+    mesh = gpd.GeoDataFrame({'geometry': polygons}, crs=gdf.crs)
+
+    # --- 各メッシュ内のポイント数を集計 ---
+    joined = gpd.sjoin(gdf, mesh, how="inner", predicate="within")
     counts = joined.groupby('index_right').size()
-    mesh['count'] = counts.reindex(mesh.index, fill_value=0)
+    mesh['count'] = counts
+    mesh['count'] = mesh['count'].fillna(0)
 
-    # 4) ヒートマップ描画
-    fig, ax = plt.subplots(figsize=(12,12))
-    mesh.plot(column='count', ax=ax, cmap='inferno', edgecolor='gray', linewidth=0.2, legend=True)
-    ctx.add_basemap(ax, alpha=0.4)
-    ax.set_axis_off()
-    ax.set_title(f"Point‐Based Mesh Heatmap {file_name}", fontsize=16)
-    plt.tight_layout()
+    # --- プロット ---
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    # メッシュ密度をプロット
+    mesh.plot(column='count',
+            ax=ax,
+            cmap='OrRd',
+            legend=True,
+            edgecolor='grey',
+            alpha=0.7)
+
+    # GPSポイントをプロット
+    # gdf.plot(ax=ax, color='blue', markersize=2, alpha=0.5, label="GPS Points")
+
+    # 背景地図を追加
+    ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
+
+    # タイトルなど
+    ax.set_title("GPS Point Density (Mesh-based)", fontsize=14)
+    ax.set_axis_off()  # 緯度経度の目盛りは消す
+    ax.legend()
     plt.savefig(f"{OUT_DIR}point_mesh_heatmap_{file_name}.png", dpi=300)
 
 
 #segmentのlabelをuserごとに比率にして可視化
-def plot_ratio_by_user(df, OUT_DIR):
-    user_counts = (
-                    df.groupby(['hashed_adid', 'label'])
-                    .size()
-                    .unstack(fill_value=0)
-                    .reset_index()
-                    )
-    # 歩行・非歩行の比率を求める
-    user_counts['walk_ratio'] = user_counts['walk'] / (user_counts['walk'] + user_counts['non-walk'])
-    user_counts['non_walk_ratio'] = user_counts['non-walk'] / (user_counts['walk'] + user_counts['non-walk'])
+# def plot_ratio_by_user(df, OUT_DIR):
+    # user_counts = (
+    #                 df.groupby(['hashed_adid', 'label'])
+    #                 .size()
+    #                 .unstack(fill_value=0)
+    #                 .reset_index()
+    #                 )
+    # # 歩行・非歩行の比率を求める
+    # user_counts['walk_ratio'] = user_counts['walk'] / (user_counts['walk'] + user_counts['non-walk'])
+    # user_counts['non_walk_ratio'] = user_counts['non-walk'] / (user_counts['walk'] + user_counts['non-walk'])
 
-    # ソート（オプション：徒歩比率の高い順など）
-    user_counts_sorted = user_counts.sort_values('walk_ratio').reset_index(drop=True)
-    # 各ユーザーごとの合計ポイント数
-    point_counts = df.groupby('hashed_adid')['n_points'].sum().reset_index()
-    point_counts.rename(columns={'n_points': 'total_points'}, inplace=True)
+    # # ソート（オプション：徒歩比率の高い順など）
+    # user_counts_sorted = user_counts.sort_values('walk_ratio').reset_index(drop=True)
+    # # 各ユーザーごとの合計ポイント数
+    # point_counts = df.groupby('hashed_adid')['n_points'].sum().reset_index()
+    # point_counts.rename(columns={'n_points': 'total_points'}, inplace=True)
 
-    # user_counts_sorted に結合（walk_ratio順で整列済み）
-    merged_df = user_counts_sorted.merge(point_counts, on='hashed_adid')
+    # # user_counts_sorted に結合（walk_ratio順で整列済み）
+    # merged_df = user_counts_sorted.merge(point_counts, on='hashed_adid')
     
-    x = np.arange(len(merged_df))
+    # x = np.arange(len(merged_df))
 
-    fig, ax1 = plt.subplots(figsize=(14, 6))
+    # fig, ax1 = plt.subplots(figsize=(14, 6))
 
-    # 左軸：walk / non-walk 比率（積み上げ棒）
-    ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
-    ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
-    ax1.set_ylabel('Ratio', fontsize=17)
-    ax1.set_ylim(0, 1)
-    ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
-    ax1.tick_params(axis='x', labelsize=16)
-    ax1.tick_params(axis='y', labelsize=16)
-    ax1.legend(loc='upper left', fontsize=17)
-    ax1.grid(True, axis='y')
+    # # 左軸：walk / non-walk 比率（積み上げ棒）
+    # ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
+    # ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
+    # ax1.set_ylabel('Ratio', fontsize=17)
+    # ax1.set_ylim(0, 1)
+    # ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
+    # ax1.tick_params(axis='x', labelsize=16)
+    # ax1.tick_params(axis='y', labelsize=16)
+    # ax1.legend(loc='upper left', fontsize=17)
+    # ax1.grid(True, axis='y')
 
-    # 右軸：n_point の合計を折れ線で
-    ax2 = ax1.twinx()
-    ax2.scatter(x, merged_df['total_points'], label='Total Points', color='black', linestyle='--', marker='o')
-    ax2.set_ylabel('Total Points', fontsize=17)
-    ax2.tick_params(axis='y', labelsize=16)
-    ax2.legend(loc='upper right', fontsize=17)
+    # # 右軸：n_point の合計を折れ線で
+    # ax2 = ax1.twinx()
+    # ax2.scatter(x, merged_df['total_points'], label='Total Points', color='black', linestyle='--', marker='o')
+    # ax2.set_ylabel('Total Points', fontsize=17)
+    # ax2.tick_params(axis='y', labelsize=16)
+    # ax2.legend(loc='upper right', fontsize=17)
 
-    # plt.title('Walk/Non-Walk Ratio and Total Points per User', fontsize=17)
-    plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}ratio_by_user.png', dpi=300)
+    # # plt.title('Walk/Non-Walk Ratio and Total Points per User', fontsize=17)
+    # plt.tight_layout()
+    # plt.savefig(f'{OUT_DIR}ratio_by_user.png', dpi=300)

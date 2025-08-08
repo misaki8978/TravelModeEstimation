@@ -3,13 +3,12 @@
 #$ -S /bin/bash
 #$ -cwd
 #$ -V
-#$ -N gps_weekly
-#$ -q all.q@Cheryl
-#$ -pe smp 9
+#$ -N gis_layer
+#$ -q all.q@Jake
+#$ -pe smp 8
 #$ -t 1-12
-#$ -tc 5
-#$ -o logs/04_stay_replay/$TASK_ID.out
-#$ -e logs/04_stay_replay/$TASK_ID.err
+#$ -o logs/09_nagasaki_2019/$TASK_ID.out
+#$ -e logs/09_nagasaki_2019/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
 
@@ -22,7 +21,7 @@ echo "Using place: $PLACE" >&1
 echo "Using year: $YEAR" >&1
 echo "Using place_year: $PLACE_YEAR" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE}_${YEAR}_gps"
+CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE}_${YEAR}_gis"
 # FILTER_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly"
 
 echo "CHUNK: $CHUNK_DIR"
@@ -32,4 +31,4 @@ CHUNK_FILE=$(printf "%s/chunk_%02d" "$CHUNK_DIR" $((SGE_TASK_ID-1)))
 
 # ファイル名の配列に読み込んで Python に渡す
 mapfile -t FILES < "$CHUNK_FILE"
-python3 /home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py "${FILES[@]}"
+python3 /home/fukui/workspace/TravelModeEstimation/scripts/09_gis/gis_layer.py "${FILES[@]}"

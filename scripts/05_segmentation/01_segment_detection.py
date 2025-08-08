@@ -26,7 +26,7 @@ dist1 = 10          # short セグメントと判定する距離 (m)
 dist2 = 50         # uncertain/certain 判定用距離 (m)
 limit = 4           # uncertain セグメント連続回数の閾値
 
-message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_05_segment.txt"
+message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_05_segment_replay.txt"
 
 
 file = sys.argv[1]
@@ -36,21 +36,14 @@ path_parts = file.split("/")
 place = "_".join(path_parts[-3].split("_")[-2:])
 year = path_parts[-2]
 month = path_parts[-1].split("_")[0]
-OUT_DIR = f"/home/data/fukui/processed/05_01_{place}/{year}/"
+OUT_DIR = f"/home/data/fukui/processed/05_01_{place}_replay/{year}/"
 os.makedirs(OUT_DIR, exist_ok=True)
-
-try:
-    # log_message(f"{filename}を処理中...")
-    with gzip.open(file, 'rt') as f:
-        df = pd.read_csv(f, parse_dates=["datetime"])\
-                .sort_values(["hashed_adid", "datetime"])\
-                .assign(
-                        latitude_anonymous=lambda x: np.radians(x["latitude_anonymous"]),
-                        longitude_anonymous=lambda x: np.radians(x["longitude_anonymous"]),
-                        )
-        f.close()
-except FileNotFoundError:
-    log_message(f"ファイル {file} が見つかりませんでした。")
+df = pd.read_csv(file, parse_dates=["datetime"])\
+       .sort_values(["hashed_adid", "datetime"])\
+       .assign(
+                latitude=lambda x: np.radians(x["latitude_anonymous"]),
+                longitude=lambda x: np.radians(x["longitude_anonymous"]),
+                )
 
 
 def _process_task(
@@ -92,6 +85,7 @@ for res in results:
 log_message(f"{month} done ", message_path)
 
 df_segmented = pd.concat(segmented_list)
+log_message(f"df緯度経度のソート後: {df_segmented['latitude_anonymous'].min()} {df_segmented['latitude_anonymous'].max()} {df_segmented['longitude_anonymous'].min()} {df_segmented['longitude_anonymous'].max()}", message_path)
 df_segmented.to_csv(
     f"{OUT_DIR}/{month}_segmented.csv.gz", index=False, compression="gzip"
 )

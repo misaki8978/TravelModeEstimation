@@ -6,7 +6,7 @@
 #$ -N gps_segmentation
 #$ -q all.q@Jake
 #$ -pe smp 8
-#$ -t 1-12
+#$ -t 1-5
 #$ -o logs/09_nagasaki_2019/$TASK_ID.out
 #$ -e logs/09_nagasaki_2019/$TASK_ID.err
 

@@ -2,11 +2,11 @@
 #$ -S /bin/bash
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@David
-
+#$ -q all.q@Cheryl
+#$ -tc 5
 # 01_build_and_submit.sh
 
-rm logs/log_04_stay.txt
+rm logs/log_04_stay_replay.txt
 
 cd $HOME/workspace/TravelModeEstimation
 
@@ -16,8 +16,8 @@ echo "place_year=${place_year}" >&2
 PLACE_YEAR=${place_year} bash ./scripts/04_stay/01_make_chunks.sh >&2
 
 
-mkdir -p logs/${place_year}
-rm -rf logs/${place_year}/*
+mkdir -p logs/04_stay_replay
+rm -rf logs/04_stay_replay/*
 
 CHUNK_DIR="$DATA_DIR/interim/chunks/${place_year}_gps"
 

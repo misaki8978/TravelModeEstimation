@@ -2,7 +2,7 @@
 #$ -S /bin/bash
 #$ -V
 #$ -N gps_segmentation
-#$ -q all.q@Jake
+#$ -q all.q@Claudette
 
 # 01_build_and_submit.sh
 

@@ -3,18 +3,17 @@
 #$ -S /bin/bash
 #$ -cwd
 #$ -V
-#$ -N gps_weekly
-#$ -q all.q@Cheryl
-#$ -pe smp 9
-#$ -t 1-12
-#$ -tc 5
-#$ -o logs/04_stay_replay/$TASK_ID.out
-#$ -e logs/04_stay_replay/$TASK_ID.err
+#$ -N gis_layer
+#$ -q all.q@Jake
+#$ -pe smp 8
+#$ -t 1-__NUM__
+#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
+#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
 
-# Split 09_nagasaki_2019 into place and year
-PLACE_YEAR="09_nagasaki_2019"
+# Split __PLACE_YEAR__ into place and year
+PLACE_YEAR="__PLACE_YEAR__"
 PLACE=$(echo "$PLACE_YEAR" | sed 's/_[^_]*$//')  # Gets everything before the last underscore
 YEAR=$(echo "$PLACE_YEAR" | sed 's/.*_//')       # Gets everything after the last underscore
 
@@ -22,7 +21,7 @@ echo "Using place: $PLACE" >&1
 echo "Using year: $YEAR" >&1
 echo "Using place_year: $PLACE_YEAR" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE}_${YEAR}_gps"
+CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE}_${YEAR}_gis"
 # FILTER_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly"
 
 echo "CHUNK: $CHUNK_DIR"
@@ -32,4 +31,4 @@ CHUNK_FILE=$(printf "%s/chunk_%02d" "$CHUNK_DIR" $((SGE_TASK_ID-1)))
 
 # ファイル名の配列に読み込んで Python に渡す
 mapfile -t FILES < "$CHUNK_FILE"
-python3 /home/fukui/workspace/TravelModeEstimation/scripts/04_stay/01_stay_detection.py "${FILES[@]}"
+python3 /home/fukui/workspace/TravelModeEstimation/scripts/09_gis/gis_layer.py "${FILES[@]}"

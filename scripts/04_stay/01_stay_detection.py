@@ -10,106 +10,150 @@ from sklearn.cluster import DBSCAN
 from scipy.spatial.distance import pdist
 from math import radians, sin, cos, sqrt, atan2
 import warnings
-import multiprocessing
-
+import multiprocessing as mp
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
-from stay_func import stay_detection
+from stay_func import stay_detection, extract_stays_fast, run_dbscan_on_stays, assign_stay_ids, stay_to_move, speed_calc, func_move_summary
+from stay_func_re import stayPointExtraction, Point
 
 warnings.filterwarnings("ignore")
 
-
-files = sys.argv[1:]  # 引数でファイルリストを受け取る
-message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_04_stay.txt"
-
-path_parts = files[0].split("/")
-# log_message(f"{path_parts}", message_path)
-# 最後の2つの要素を取得
-place = path_parts[-5]
-year = path_parts[-4]
-month = path_parts[-1].split("_")[0]  #'2019-11'
-
-OUT_DIR = f"/home/data/fukui/processed/04_01_{place}/{year}/"
-os.makedirs(OUT_DIR, exist_ok=True)
-
-df = pd.read_csv(files[0], parse_dates=["datetime"])\
-        .assign(
-                latitude_anonymous=lambda x: np.radians(x["latitude_anonymous"]),
-                longitude_anonymous=lambda x: np.radians(x["longitude_anonymous"]),
-                )
-
-    # log_message(f"{df.shape[0]}", message_path)
-
-roam = 500
-dur = 600
-meters = 500
-samples = 2
-
-stays_list = []
-moves_list = []
-GPS_list = []
-
-# Parallel processing for stay detection
-tasks = df[["hashed_adid", "week_start"]].drop_duplicates().itertuples(index=False, name=None)
-def _process_task(
-    task: tuple,
-    df: pd.DataFrame,
-    roam_dist: int,
-    stay_dur: int,
-    eps_meters: int,
-    min_samples: int,
-):
-    adid, week_start = task
-    df = df.query("hashed_adid == @adid and week_start == @week_start")\
-            .sort_values(
-                        by=["datetime"], ignore_index=True
-                        )
-    
-    if 0 < df.shape[0] < 7000:
-        stays, moves, GPSs = stay_detection(
-            df, roam_dist, stay_dur, eps_meters, min_samples
-        )
-        log_message(f"{month} {adid} {week_start} done", message_path)
-        return stays, moves, GPSs
-    return None
+# ===== グローバル変数 =====
+base_dict = {}
+results_prev_dict = {}
+func_name_global = None
+month_global = None
+message_path = None
 
 
-process_func = partial(
-    _process_task,
-    df=df,
-    roam_dist=roam,
-    stay_dur=dur,
-    eps_meters=meters,
-    min_samples=samples,
-)
+def init_worker(results_prev, func_name, month, msg_path):
+    global results_prev_dict, func_name_global, month_global, message_path
+    results_prev_dict = results_prev
+    func_name_global = func_name
+    month_global = month
+    message_path = msg_path
 
 
-with multiprocessing.Pool(processes=32) as pool:
-    results = pool.map(
-        process_func, tasks
-    )
+def worker(task_tuple):
+    target_id, df = task_tuple
+    roam_dist = 500
+    stay_dur = 600
+    eps_meters = 500
+    min_samples = 2
 
-for res in results:
-    if res:
-        stays, moves, GPSs = res
-        stays_list.append(stays)
-        moves_list.append(moves)
-        GPS_list.append(GPSs)
+    # if func_name_global == "extract_stays_fast":
+    #     df = base_dict[target_id]
+    #     log_message(f"extract_stays_fast: {month_global} {target_id}", message_path)
+    #     return extract_stays_fast(df, roam_dist, stay_dur)
+    if func_name_global == "stayPointExtraction":
+        points = [
+                    Point(row['latitude_anonymous'], row['longitude_anonymous'], row['datetime'], row['hashed_adid'])
+                    for _, row in df.iterrows()
+                ]
+        # log_message(f"stayPointExtraction: {month_global} {target_id}", message_path)
+        return stayPointExtraction(points, roam_dist, stay_dur)
 
-log_message(f"{month} done", message_path)
+    elif func_name_global == "run_dbscan_on_stays":
+        if target_id in results_prev_dict:
+            # move_df = results_prev_dict[target_id]
+            # log_message(f"run_dbscan_on_stays: {month_global} {target_id} length {len(move_df)}", message_path)
+            # stay_cluster = run_dbscan_on_stays(move_df, eps_meters, min_samples)
+            # log_message(f"stay_cluster: {target_id} {len(stay_cluster)}", message_path)
+            
+            return run_dbscan_on_stays(results_prev_dict[target_id], eps_meters, min_samples)
+            
+        else:
+            # log_message(f"run_dbscan_on_stays: {month_global} {target_id} None", message_path)
+            return pd.DataFrame(
+                columns=["hashed_adid", "latitude", "longitude", "datetime", "cluster"]
+            )
 
-stay_point_summary = pd.concat(stays_list, ignore_index=True)
-move_summary = pd.concat(moves_list, ignore_index=True)
-speed_GPS = pd.concat(GPS_list, ignore_index=True)
+    elif func_name_global == "assign_stay_ids":
+        if target_id in results_prev_dict:
+            clustered_stays = results_prev_dict[target_id]
+            return assign_stay_ids(df, clustered_stays)
+        else:
+            return df.assign(stay_id=-1)
 
-# log_message(f"{(speed_GPS.head())}", message_path)
+    elif func_name_global == "stay_to_move":
+        if target_id in results_prev_dict:
+            stay_ad_df = results_prev_dict[target_id]
+            return stay_to_move(stay_ad_df)
+        else:
+            return None
 
-stay_point_summary.to_csv(
-    f"{OUT_DIR}/{month}_stay_point_summary.csv.gz", index=False, compression="gzip"
-)
-move_summary.to_csv(
-    f"{OUT_DIR}/{month}_move_summary.csv.gz", index=False, compression="gzip"
-)
-speed_GPS.to_csv(
-    f"{OUT_DIR}/{month}_speed_GPS.csv.gz", index=False, compression="gzip"
-)
+    elif func_name_global == "speed_calc":
+        if target_id in results_prev_dict:
+            # move_df = results_prev_dict[target_id]
+            return speed_calc(results_prev_dict[target_id])
+        else:
+            return None
+
+    elif func_name_global == "func_move_summary":
+        if target_id in results_prev_dict:
+            # speed_GPS = results_prev_dict[target_id]
+            return func_move_summary(results_prev_dict[target_id])
+        else:
+            return None
+
+    else:
+        raise ValueError(f"Unknown func_name: {func_name_global}")
+
+
+if __name__ == "__main__":
+    files = sys.argv[1:]
+    message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_04_stay_replay.txt"
+
+    # path情報
+    path_parts = files[0].split("/")
+    place = path_parts[-5]
+    year = path_parts[-4]
+    month = path_parts[-1].split("_")[0]
+
+    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/"
+    os.makedirs(OUT_DIR, exist_ok=True)
+
+    # ===== データ読み込み & dict化 =====
+    df = pd.read_csv(files[0], parse_dates=["datetime"], compression="gzip") \
+            .assign(
+                latitude=lambda x: np.radians(x["latitude_anonymous"]),
+                longitude=lambda x: np.radians(x["longitude_anonymous"])
+            ).sort_values(by=["hashed_adid","datetime"], ascending=[True, True])
+    base_dict = {k: v for k, v in df.groupby("hashed_adid")}
+    tasks = [(k, v) for k, v in base_dict.items()]  # ← ここがポイント
+
+    funcs = [
+        # "extract_stays_fast",
+        "stayPointExtraction",
+        "run_dbscan_on_stays",
+        "assign_stay_ids",
+        "stay_to_move",
+        "speed_calc",
+        "func_move_summary"
+    ]
+
+    results_prev_dict = {}
+
+    for func_name in funcs:
+        out_path = os.path.join(OUT_DIR, f"{func_name}_{month}.csv")
+
+        if os.path.exists(out_path):
+            log_message(f"[SKIP] {month} {func_name}", message_path)
+            results_df = pd.read_csv(out_path)
+            results_prev_dict = {k: v for k, v in results_df.groupby("hashed_adid")}
+            continue
+
+        # 並列処理
+        with mp.Pool(processes=6, initializer=init_worker,
+                     initargs=(results_prev_dict, func_name, month, message_path)) as pool:
+            results = pool.map(worker, tasks)
+            results = [r for r in results if r is not None]
+        log_message(f"results: {len(results)}", message_path)
+        results_df = pd.concat(results, ignore_index=True)
+        results_df.to_csv(out_path, index=False)
+        log_message(f"results_df: {results_df.head()}", message_path)
+
+        # 次のフェーズ用にdict化して保持
+        results_prev_dict = {k: v for k, v in results_df.groupby("hashed_adid")}
+
+        log_message(f"\n=== {month} {func_name} finished for ALL tasks ===\n", message_path)
