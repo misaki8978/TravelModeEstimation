@@ -16,8 +16,8 @@ echo "Using place_year: $PLACE_YEAR" >&1
 
 # データがあるディレクトリ（環境に合わせて調整）
 # DIR="$COMMON_DIR/BLWSakigake/${PLACE_YEAR}"  #本番
-# DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
-DIR="$DATA_DIR/interim/multithread/04_01_${PLACE}_${YEAR}_weekly"
+DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
+# DIR="$DATA_DIR/interim/multithread/04_01_${PLACE}_${YEAR}_weekly/hariharan/"
 
 # チャンクファイルを置くフォルダ
 CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE_YEAR}_segment"
@@ -27,7 +27,7 @@ rm -rf "$CHUNK_DIR/chunk_*"    # 古いチャンクがあれば削除
 
 
 # データファイルの一覧を作成
-find "$DIR" -maxdepth 1 -name 'speed_calc*.csv' | sort > "$CHUNK_DIR/all_files.lst"
+find "$DIR" -maxdepth 1 -name '*GPS.csv.gz' | sort > "$CHUNK_DIR/all_files.lst"
 
 # 一覧を100行ごとに分割
 split -d -l "$CHUNK" "$CHUNK_DIR/all_files.lst" "$CHUNK_DIR/chunk_"

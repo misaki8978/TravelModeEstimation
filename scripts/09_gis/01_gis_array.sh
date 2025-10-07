@@ -4,7 +4,7 @@
 #$ -cwd
 #$ -V
 #$ -N gis_layer
-#$ -q all.q@Jake
+#$ -q all.q@Dwight
 #$ -pe smp 8
 #$ -t 1-12
 #$ -o logs/09_nagasaki_2019/$TASK_ID.out
@@ -22,13 +22,16 @@ echo "Using year: $YEAR" >&1
 echo "Using place_year: $PLACE_YEAR" >&1
 
 CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE}_${YEAR}_gis"
+GIS_DIR="$DATA_DIR/interim/GIS_geojson"
 # FILTER_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly"
 
 echo "CHUNK: $CHUNK_DIR"
 
 CHUNK_FILE=$(printf "%s/chunk_%02d" "$CHUNK_DIR" $((SGE_TASK_ID-1)))
-# FILTER_FILES=(${FILTER_DIR}/*.csv.gz)
+GIS_FILES=(${GIS_DIR}/nagasaki*.geojson)
 
 # ファイル名の配列に読み込んで Python に渡す
 mapfile -t FILES < "$CHUNK_FILE"
-python3 /home/fukui/workspace/TravelModeEstimation/scripts/09_gis/gis_layer.py "${FILES[@]}"
+python3 /home/fukui/workspace/TravelModeEstimation/scripts/09_gis/01_gis_layer.py "${FILES[@]}" -- "${GIS_FILES[@]}"
+
+# python3 /home/fukui/workspace/TravelModeEstimation/scripts/09_gis/01_gis_bus.py "${FILES[@]}" -- "${GIS_FILES[@]}"

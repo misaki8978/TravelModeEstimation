@@ -5,7 +5,8 @@
 #$ -V
 #$ -N gps_weekly
 #$ -q all.q@Cheryl
-#$ -pe smp 1
+#$ -pe smp 8
+#$ -tc 5
 #$ -t 1-__NUM__
 #$ -o logs/__PLACE_YEAR__/$TASK_ID.out
 #$ -e logs/__PLACE_YEAR__/$TASK_ID.err
@@ -24,7 +25,7 @@ FILTER_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly"
 
 echo "CHUNK: $CHUNK_DIR" >&1
 
-CHUNK_FILE=$(printf "%s/chunk_%02d" "$CHUNK_DIR" $((SGE_TASK_ID-1)))
+CHUNK_FILE=$(printf "%s/chunk_%04d" "$CHUNK_DIR" $((SGE_TASK_ID-1)))
 FILTER_FILES=(${FILTER_DIR}/*.csv.gz)
 
 # ファイル名の配列に読み込んで Python に渡す

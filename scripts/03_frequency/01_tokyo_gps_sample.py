@@ -5,10 +5,13 @@ import os
 import sys
 from datetime import datetime, timedelta
 import warnings
+import gzip
+import multiprocessing
+from functools import partial
 warnings.filterwarnings('ignore')
 
 def log_message(message):
-    with open(f"/home/fukui/workspace/TravelModeEstimation/logs/{folder_name}/log_{folder_name}_{file_number}.txt", "a") as log_file:
+    with open(f"/home/fukui/workspace/TravelModeEstimation/logs/{folder_name}/log_{folder_name}.txt", "a") as log_file:
         log_file.write(message + "\n")
 
 file_list = sys.argv[1:]
@@ -24,73 +27,67 @@ output_chunk_size = 1600000
 output_dir = f"/home/data/fukui/interim/agg_before_filter/{folder_name}/bulk"
 os.makedirs(output_dir, exist_ok=True)
 
-# 一時ファイルを保存するディレクトリ
-temp_dir = f"/home/data/fukui/interim/temp/{folder_name}"
-os.makedirs(temp_dir, exist_ok=True)
+# # 一時ファイルを保存するディレクトリ
+# temp_dir = f"/home/data/fukui/interim/temp/{folder_name}"
+# os.makedirs(temp_dir, exist_ok=True)
 
-def process_chunk(chunk):
-    return (chunk
-            .loc[lambda x: x['hashed_adid'].notna()]
+def process_chunk(file):
+    df = pd.read_csv(file, compression="gzip")\
             .assign(
-                datetime=lambda x: pd.to_datetime(x['datetime'], errors='coerce'),
-                week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
-            )
-            .groupby(['hashed_adid', 'week_start'])
-            .size()
-            .reset_index(name='count'))
+                       datetime=lambda x: pd.to_datetime(x['datetime'], errors='coerce'),
+                       # 週の開始日（日曜）を計算
+                       week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+                   )\
+            .groupby(['hashed_adid', 'week_start'])\
+            .size()\
+            .reset_index(name='count')
+    # log_message(f"{file_number} df: {df.head()}")
+    return (df)
 
-temp_files = []
-for i, filename in enumerate(file_list):
-    try:
-        log_message(f"Processing file {i+1}/{len(file_list)}: {filename}")
-        temp_file = f"{temp_dir}/temp_{i}.csv.gz"
-        temp_files.append(temp_file)
+
+
+
+weekly_records = []
+tasks = file_list
+
+with multiprocessing.Pool(processes=8) as pool:
+    results = pool.map(
+        process_chunk, tasks
+    )   
+for res in results:
+    weekly_records.append(res)
         
-        # チャンク単位で処理
-        chunks_processed = 0
-        chunk_results = []
+
+# 高速化された出力処理
+log_message(f"{file_number} len(weekly_records): {len(weekly_records)}")
+
+# 1. より効率的なDataFrame結合（concatの代わりにリスト内包表記を使用）
+if weekly_records:
+    # 空のDataFrameを除外してから結合
+    valid_records = [df for df in weekly_records if not df.empty]
+    if valid_records:
+        df_weekly_record = pd.concat(valid_records, ignore_index=True)
         
-        with gzip.open(filename, 'rt') as f:
-            for chunk in pd.read_csv(f, chunksize=chunk_size):
-                processed_chunk = process_chunk(chunk)
-                chunk_results.append(processed_chunk)
-                chunks_processed += 1
-                
-                # メモリを節約するため、一定数のチャンクが処理されたら中間結果を保存
-                if len(chunk_results) >= 10:
-                    intermediate = pd.concat(chunk_results).groupby(['hashed_adid', 'week_start'], as_index=False).sum()
-                    intermediate.to_csv(temp_file, index=False, compression='gzip', mode='a' if chunks_processed > 10 else 'w')
-                    chunk_results = []
-                    
-        # 残りのチャンクを処理
-        if chunk_results:
-            intermediate = pd.concat(chunk_results).groupby(['hashed_adid', 'week_start'], as_index=False).sum()
-            intermediate.to_csv(temp_file, index=False, compression='gzip', mode='a' if chunks_processed > 0 else 'w')
-            
-    except FileNotFoundError:
-        log_message(f"File {filename} not found.")
-        continue
+        # 2. グループ化と集計を最適化
+        final_result = (df_weekly_record
+                       .groupby(['hashed_adid', 'week_start'], as_index=False)
+                       .agg({'count': 'sum'}))
+        
+        log_message(f"{file_number} final_result: {len(final_result)}")
+        
+        
+        chunk_size = 1600000
+        #log_message(f"file_number: {file_number}")
+        for i in range(0, len(final_result), chunk_size):
+            chunk = final_result[i:i + chunk_size]
+            output_file_name = f"{file_number}_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
+            chunk.to_csv(f"{output_dir}/{output_file_name}", index=False, compression='gzip')
+            log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {final_result.shape[0]} rows.")
 
-# 一時ファイルを順次読み込んで集計
-final_result = pd.DataFrame()
-for temp_file in temp_files:
-    if os.path.exists(temp_file):
-        chunk_df = pd.read_csv(temp_file, compression='gzip')
-        if final_result.empty:
-            final_result = chunk_df
-        else:
-            final_result = pd.concat([final_result, chunk_df]).groupby(['hashed_adid', 'week_start'], as_index=False).sum()
-        # 中間ファイルを削除
-        os.remove(temp_file)
+        
+        log_message(f"{file_number} Saved.")
+    else:
+        log_message(f"{file_number} No valid records to save.")
+else:
+    log_message(f"{file_number} No records to process.")
 
-# 結果を指定されたチャンクサイズで保存
-for i in range(0, len(final_result), output_chunk_size):
-    chunk = final_result[i:i + output_chunk_size]
-    output_file_name = f"{file_number}_weekly_user_counts_{i // output_chunk_size + 1}.csv.gz"
-    output_path = os.path.join(output_dir, output_file_name)
-    chunk.to_csv(output_path, index=False, compression='gzip')
-    log_message(f"Saved {output_file_name} with {len(chunk)} rows / {final_result.shape[0]} rows.")
-
-# 一時ディレクトリの削除
-os.rmdir(temp_dir)
-log_message("Processing completed successfully.")

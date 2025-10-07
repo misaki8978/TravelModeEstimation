@@ -17,8 +17,8 @@ from math import radians, sin, cos, sqrt, atan2
 
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
-from segment_analysis_func import plot_velocity_distribution, plot_mesh_heatmap_by_points, make_seg_features, make_normal_df, make_user_stats
-
+from segment_analysis_func import plot_velocity_distribution, plot_mesh_heatmap_by_points, make_seg_features, make_normal_df, make_user_stats, plot_ratio_by_user
+from gis import plot_gpspoint
 warnings.filterwarnings('ignore')
 
 files = sys.argv[1:]  # 引数でファイルリストを受け取る
@@ -34,30 +34,26 @@ year = path_parts[-1]
 place_ = path_parts[-2]
 place = "_".join(place_.split("_")[2:])
 
-OUT_DIR = f"/home/data/fukui/outputs/figures/{place}/{year}/03_segment_analysis/"
-OUT_DATA = f"/home/data/fukui/processed/01_03_segment_analysis/{place}/{year}_weekly/"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/03_segment_analysis/{place}/{year}/"
+OUT_DATA = f"/home/data/fukui/processed/01_03_segment_analysis/{place}/{year}/"
 os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(OUT_DATA, exist_ok=True)
 
 df_list = []
 for file in files:
     with gzip.open(file, 'rt') as f:
+        month = file.split('/')[-1].split('_')[0]
         df = pd.read_csv(f, parse_dates=['datetime'])\
                 .assign(
-                        latitude_anonymous=lambda x: np.radians(x["latitude_anonymous"]),
-                        longitude_anonymous=lambda x: np.radians(x["longitude_anonymous"]),
+                        latitude=lambda x: np.radians(x["latitude_anonymous"]),
+                        longitude=lambda x: np.radians(x["longitude_anonymous"]),
+                        segment_month_id = lambda x: month + "_" + x['segment_id'].astype(str)
                         )
         df_list.append(df)
 
 df_segment = pd.concat(df_list)
-# log_message(f"{df_segment.shape[0]} rows", message_path)
-# log_message(f"{df_segment.select_dtypes(include='object').describe(include='all')}", message_path)
-# log_message(f"{df_segment.select_dtypes(include='number').describe(include='all')}", message_path)
-# seg_segment, seg_normal, seg_speed = make_seg_features(df_segment)
-# log_message(f"{seg_normal.shape[0]} rows", message_path)
-# log_message(f"{seg_normal.select_dtypes(include='object').describe(include='all')}", message_path)
-# log_message(f"{seg_normal.select_dtypes(include='number').describe(include='all')}", message_path)
-# plot_ratio_by_user(df_normal, OUT_DIR)
+plot_gpspoint(df_segment, OUT_DIR)
+log_message(f"all points: {len(df_segment)} rows", message_path)
 seg_normal = make_user_stats(df_segment, OUT_DIR)
 log_message(f"{len(seg_normal)} rows", message_path)
 log_message(f'{len(seg_normal.query('label == "non-walk"'))}', message_path)
@@ -65,12 +61,5 @@ log_message(f'{len(seg_normal.query('label == "walk"'))}', message_path)
 
 normal_df, speed_df = make_normal_df(df_segment, seg_normal)
 plot_velocity_distribution(seg_normal, OUT_DIR)
-
+plot_ratio_by_user(seg_normal, OUT_DIR)
 seg_normal.to_csv(f"{OUT_DATA}/seg_normal.csv.gz", index=False, compression="gzip")
-# plot_speed_comparison(speed_df, OUT_DIR)
-
-file_name = "all"
-# plot_heatmap(df_normal, file_name, OUT_DIR) # 適宜変更
-
-# plot_velocity_acceleration(seg_normal, OUT_DIR)
-plot_mesh_heatmap_by_points(normal_df, file_name, OUT_DIR)

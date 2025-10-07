@@ -1,7 +1,9 @@
 import sys
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import seaborn as sns
 import warnings
 import geopandas as gpd
@@ -14,6 +16,10 @@ import shapely
 
 from datashader.transfer_functions import dynspread
 from math import radians, sin, cos, sqrt, atan2
+import matplotlib.pyplot as plt
+
+# 日本語フォントを全体設定
+plt.rcParams['font.family'] = 'Noto Sans CJK JP'
 
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
@@ -387,174 +393,342 @@ def plot_speed_comparison(speed_df_hikaku, OUT_DIR):
     plt.tight_layout()
     plt.savefig(f'{OUT_DIR}speed_comparison.png', dpi=300)
 
-# segment heatmap
-# def plot_heatmap(df, file_name, OUT_DIR):
 
-    # if df.empty:
-    #     return
-    
-    # # 緯度経度 → geometry（必要ならソート）
-    # lines = []
-    # # speeds = []
-    # for (uid, move_id, seg_id), group in df.groupby(["hashed_adid", "move_id", "segment_id"]):
-    #     points = list(zip(group["longitude_anonymous"], group["latitude_anonymous"]))
-    #     if len(points) >= 2:
-    #         lines.append(LineString(points))
-
-    #         # ここで各セグメントの代表的な速度を計算（例：平均速度）
-    #         # speeds.append(group["speed"])
-    # # print(len(lines))
-
-    # gdf = gpd.GeoDataFrame(geometry=lines, crs="EPSG:4326")  # 緯度経度系
-
-    # # 2. 投影変換（地図と一致させるためEPSG:3857）
-    # gdf = gdf.to_crs(epsg=3857)
-
-    # # 3. Datashaderでレンダリング
-    # # bounds定義（全範囲）
-    # x_range, y_range = ((gdf.bounds.minx.min()-1500, gdf.bounds.maxx.max()+1500),
-    #                     (gdf.bounds.miny.min()-1500, gdf.bounds.maxy.max()+1500))
-
-    # canvas = ds.Canvas(plot_width=1500, plot_height=1500,
-    #                 x_range=x_range, y_range=y_range)
-
-    # agg = canvas.line(gdf, geometry="geometry", agg=ds.count())
-
-    # # 4. 画像として濃淡表示
-
-
-    # img = tf.shade(agg, cmap=inferno, how="eq_hist")
-    # img = dynspread(img, threshold=0.5, max_px=3)
-    # # img = tf.shade(agg, cmap=["blue", "red"], how="log")
-
-    # # 5. Matplotlibで背景地図と合成
-    # fig, ax = plt.subplots(figsize=(12, 12))
-    # ax.imshow(img.to_pil(), extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='upper')
-
-    # # 背景タイル（OpenStreetMap）
-    # ctx.add_basemap(ax, alpha=0.4)
-
-    # # 表示調整
-    # ax.set_axis_off()
-    # ax.set_title(f"Segment Trajectory Frequency {file_name}", fontsize=16)
-    # plt.tight_layout()
-    # plt.savefig(f'{OUT_DIR}segment_trajectory_{file_name}.png')
-
-def plot_velocity_acceleration(seg_normal, OUT_DIR):
-    fig, ax = plt.subplots(figsize=(12, 7))
-    # ラベルごとにマーカーを割り当てて散布図を描画
-    markers = {"walk": "o", "non-walk": "x"}
-    for lbl, m in markers.items():
-        sub = seg_normal[seg_normal['label'] == lbl]
-        ax.scatter(sub['mean_vel'], sub['mean_acc'], marker=m, label=lbl, alpha=0.6)
-    ax.set_title('Velocity and Acceleration')
-    ax.set_xlabel('Mean Velocity (m/s)')
-    ax.set_ylabel('Mean Acceleration (m/s²)')
-    ax.legend(title='Label')
-    plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}velocity_acceleration.png', dpi=300)
-
-# メッシュ単位でセグメントの通過回数をヒートマップとして可視化
-def plot_mesh_heatmap_by_points(df, file_name, OUT_DIR):
-    gdf = gpd.GeoDataFrame(
-        df,
-        geometry=gpd.points_from_xy(df['longitude_anonymous'], df['latitude_anonymous']),
-        crs="EPSG:4326"  # WGS84
-    )
-    log_message(f"{gdf.shape[0]} rows", message_path)
-
-    # 投影変換 (Web Mercator: EPSG:3857)
-    gdf = gdf.to_crs(epsg=3857)
-
-    # --- メッシュ作成 ---
-    mesh_size = 125  # メッシュサイズ（例: 500m）
-    bounds = gdf.total_bounds  # [minx, miny, maxx, maxy]
-    xmin, ymin, xmax, ymax = bounds
-
-    # メッシュを生成
-    cols = list(range(int(xmin), int(xmax), mesh_size))
-    rows = list(range(int(ymin), int(ymax), mesh_size))
-
-    polygons = []
-    for x in cols:
-        for y in rows:
-            polygons.append(box(x, y, x + mesh_size, y + mesh_size))
-
-    mesh = gpd.GeoDataFrame({'geometry': polygons}, crs=gdf.crs)
-
-    # --- 各メッシュ内のポイント数を集計 ---
-    joined = gpd.sjoin(gdf, mesh, how="inner", predicate="within")
-    counts = joined.groupby('index_right').size()
-    mesh['count'] = counts
-    mesh['count'] = mesh['count'].fillna(0)
-
-    # --- プロット ---
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    # メッシュ密度をプロット
-    mesh.plot(column='count',
-            ax=ax,
-            cmap='OrRd',
-            legend=True,
-            edgecolor='grey',
-            alpha=0.7)
-
-    # GPSポイントをプロット
-    # gdf.plot(ax=ax, color='blue', markersize=2, alpha=0.5, label="GPS Points")
-
-    # 背景地図を追加
-    ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
-
-    # タイトルなど
-    ax.set_title("GPS Point Density (Mesh-based)", fontsize=14)
-    ax.set_axis_off()  # 緯度経度の目盛りは消す
-    ax.legend()
-    plt.savefig(f"{OUT_DIR}point_mesh_heatmap_{file_name}.png", dpi=300)
 
 
 #segmentのlabelをuserごとに比率にして可視化
-# def plot_ratio_by_user(df, OUT_DIR):
-    # user_counts = (
-    #                 df.groupby(['hashed_adid', 'label'])
-    #                 .size()
-    #                 .unstack(fill_value=0)
-    #                 .reset_index()
-    #                 )
-    # # 歩行・非歩行の比率を求める
-    # user_counts['walk_ratio'] = user_counts['walk'] / (user_counts['walk'] + user_counts['non-walk'])
-    # user_counts['non_walk_ratio'] = user_counts['non-walk'] / (user_counts['walk'] + user_counts['non-walk'])
+def plot_ratio_by_user(df, OUT_DIR,):
+    user_counts = (
+                    df.groupby(['hashed_adid', 'label'])
+                    .size()
+                    .unstack(fill_value=0)
+                    .reset_index()
+                    )
+    # 歩行・非歩行の比率を求める
+    user_counts['walk_ratio'] = user_counts['walk'] / (user_counts['walk'] + user_counts['non-walk'])
+    user_counts['non_walk_ratio'] = user_counts['non-walk'] / (user_counts['walk'] + user_counts['non-walk'])
 
-    # # ソート（オプション：徒歩比率の高い順など）
-    # user_counts_sorted = user_counts.sort_values('walk_ratio').reset_index(drop=True)
-    # # 各ユーザーごとの合計ポイント数
-    # point_counts = df.groupby('hashed_adid')['n_points'].sum().reset_index()
-    # point_counts.rename(columns={'n_points': 'total_points'}, inplace=True)
+    # ソート（オプション：徒歩比率の高い順など）
+    user_counts_sorted = user_counts.sort_values('walk_ratio').reset_index(drop=True)
+    # 各ユーザーごとの合計ポイント数
+    point_counts = df.groupby('hashed_adid')['n_points'].sum().reset_index()
+    point_counts.rename(columns={'n_points': 'total_points'}, inplace=True)
 
-    # # user_counts_sorted に結合（walk_ratio順で整列済み）
-    # merged_df = user_counts_sorted.merge(point_counts, on='hashed_adid')
+    # user_counts_sorted に結合（walk_ratio順で整列済み）
+    merged_df = user_counts_sorted.merge(point_counts, on='hashed_adid')
     
-    # x = np.arange(len(merged_df))
+    x = np.arange(len(merged_df))
 
-    # fig, ax1 = plt.subplots(figsize=(14, 6))
+    fig, ax1 = plt.subplots(figsize=(14, 6))
 
-    # # 左軸：walk / non-walk 比率（積み上げ棒）
-    # ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
-    # ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
-    # ax1.set_ylabel('Ratio', fontsize=17)
-    # ax1.set_ylim(0, 1)
-    # ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
-    # ax1.tick_params(axis='x', labelsize=16)
-    # ax1.tick_params(axis='y', labelsize=16)
-    # ax1.legend(loc='upper left', fontsize=17)
-    # ax1.grid(True, axis='y')
+    # 左軸：walk / non-walk 比率（積み上げ棒）
+    ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
+    ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
+    ax1.set_ylabel('Ratio', fontsize=17)
+    ax1.set_ylim(0, 1)
+    ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
+    ax1.tick_params(axis='x', labelsize=16)
+    ax1.tick_params(axis='y', labelsize=16)
+    ax1.legend(loc='upper left', fontsize=17)
+    ax1.grid(True, axis='y')
 
-    # # 右軸：n_point の合計を折れ線で
-    # ax2 = ax1.twinx()
-    # ax2.scatter(x, merged_df['total_points'], label='Total Points', color='black', linestyle='--', marker='o')
-    # ax2.set_ylabel('Total Points', fontsize=17)
-    # ax2.tick_params(axis='y', labelsize=16)
-    # ax2.legend(loc='upper right', fontsize=17)
+    # 右軸：n_point の合計を折れ線で
+    ax2 = ax1.twinx()
+    ax2.scatter(x, merged_df['total_points'], label='Total Points', color='black', linestyle='--', marker='o')
+    ax2.set_ylabel('Total Points', fontsize=17)
+    ax2.tick_params(axis='y', labelsize=16)
+    ax2.legend(loc='upper right', fontsize=17)
 
-    # # plt.title('Walk/Non-Walk Ratio and Total Points per User', fontsize=17)
-    # plt.tight_layout()
-    # plt.savefig(f'{OUT_DIR}ratio_by_user.png', dpi=300)
+    # plt.title('Walk/Non-Walk Ratio and Total Points per User', fontsize=17)
+    plt.tight_layout()
+    plt.savefig(f'{OUT_DIR}/ratio_by_user.png', dpi=300)
+
+
+def plot_velocity_distribution_mode(seg_normal, OUT_DIR, color_map):
+    legend_fontsize = 15
+    label_fontsize = 14
+    tick_fontsize = 12
+
+    # --- ビンの設定 ---
+    mean_vel_edges = np.arange(0, 32, 1)
+    max_vel_edges = np.arange(0, 30, 1)
+    acc_edges = np.arange(0, 6.3, 0.3)
+
+    def make_bin_column(df, col, edges, bin_name, label_fmt):
+        bins = np.concatenate(([-np.inf], edges))
+        labels = ['0'] + [label_fmt(e) for e in edges[1:]]
+        df[bin_name] = pd.cut(df[col], bins=bins, labels=labels, right=True, include_lowest=True)
+        return df
+
+    # 各特徴量のビン列を作成
+    seg_normal = make_bin_column(seg_normal, 'mean_speed', mean_vel_edges, 'mean_vel_bin', lambda x: str(int(x)))
+    seg_normal = make_bin_column(seg_normal, 'max_speed', max_vel_edges, 'max_vel_bin', lambda x: str(int(x)))
+    seg_normal = make_bin_column(seg_normal, 'max_accel', acc_edges, 'max_acc_bin', lambda x: f'{x:.1f}')
+
+    # --- ラベル別にパーセンテージ分布を計算 ---
+    def percentage_by_label(df, col_bin):
+        return (
+            df.groupby([col_bin, 'mode_label'])
+            .size()
+            .unstack(fill_value=0)
+            .apply(lambda x: 100 * x / x.sum(), axis=0)
+        )
+
+    mean_vel_pct = percentage_by_label(seg_normal, 'mean_vel_bin')
+    max_vel_pct = percentage_by_label(seg_normal, 'max_vel_bin')
+    acc_pct = percentage_by_label(seg_normal, 'max_acc_bin')
+
+    # --- 図の描画（縦に3つ） ---
+    fig, axes = plt.subplots(3, 1, figsize=(8, 15))
+
+    # 平均速度
+    for lbl in mean_vel_pct.columns:
+        axes[0].plot(mean_vel_pct.index.astype(float), mean_vel_pct[lbl], marker='o', label=lbl, color=color_map.get(lbl, None))  # ← ここで色を指定)
+    axes[0].set_title('Mean Velocity', fontsize=17)
+    axes[0].set_ylabel('Percentage (%)', fontsize=17)
+    axes[0].set_xlabel('Mean Velocity (m/s)', fontsize=17)
+    axes[0].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[0].grid(True)
+    axes[0].legend(fontsize=legend_fontsize)
+
+    # 最大速度
+    for lbl in max_vel_pct.columns:
+        axes[1].plot(max_vel_pct.index.astype(float), max_vel_pct[lbl], marker='o', label=lbl, color=color_map.get(lbl, None))  # ← ここで色を指定)
+    axes[1].set_title('Max Velocity',fontsize=17)
+    axes[1].set_ylabel('Percentage (%)', fontsize=13)
+    axes[1].set_xlabel('Max Velocity (m/s)', fontsize=13)
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[1].grid(True)
+    axes[1].legend(fontsize=legend_fontsize)
+
+    # 平均加速度
+    for lbl in acc_pct.columns:
+        axes[2].plot(acc_pct.index.astype(float), acc_pct[lbl], marker='o', label=lbl, color=color_map.get(lbl, None))  # ← ここで色を指定)
+    axes[2].set_title('Max Acceleration', fontsize=17)
+    axes[2].set_ylabel('Percentage (%)', fontsize=13)
+    axes[2].set_xlabel('Acceleration (m/s²)', fontsize=13)
+    axes[2].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[2].grid(True)
+    axes[2].legend(fontsize=legend_fontsize)
+
+    plt.tight_layout(rect=(0, 0, 1, 0.96))
+    plt.savefig(f'{OUT_DIR}/velocity_distribution_mode.png', dpi=300)
+
+def plot_velocity_distribution_mode_bw(seg_normal, OUT_DIR, marker_map):
+    legend_fontsize = 15
+    label_fontsize = 14
+    tick_fontsize = 12
+
+    # --- ビンの設定 ---
+    mean_vel_edges = np.arange(0, 32, 1)
+    max_vel_edges = np.arange(0, 30, 1)
+    acc_edges = np.arange(0, 6.3, 0.3)
+
+    def make_bin_column(df, col, edges, bin_name, label_fmt):
+        bins = np.concatenate(([-np.inf], edges))
+        labels = ['0'] + [label_fmt(e) for e in edges[1:]]
+        df[bin_name] = pd.cut(df[col], bins=bins, labels=labels, right=True, include_lowest=True)
+        return df
+
+    seg_normal = make_bin_column(seg_normal, 'mean_speed', mean_vel_edges, 'mean_vel_bin', lambda x: str(int(x)))
+    seg_normal = make_bin_column(seg_normal, 'max_speed', max_vel_edges, 'max_vel_bin', lambda x: str(int(x)))
+    seg_normal = make_bin_column(seg_normal, 'max_accel', acc_edges, 'max_acc_bin', lambda x: f'{x:.1f}')
+
+    def percentage_by_label(df, col_bin):
+        return (
+            df.groupby([col_bin, 'mode_label'])
+            .size()
+            .unstack(fill_value=0)
+            .apply(lambda x: 100 * x / x.sum(), axis=0)
+        )
+
+    mean_vel_pct = percentage_by_label(seg_normal, 'mean_vel_bin')
+    max_vel_pct = percentage_by_label(seg_normal, 'max_vel_bin')
+    acc_pct = percentage_by_label(seg_normal, 'max_acc_bin')
+
+    fig, axes = plt.subplots(3, 1, figsize=(8, 15))
+    fig.subplots_adjust(hspace=0.7)
+
+    # 平均速度
+    for lbl in mean_vel_pct.columns:
+        axes[0].plot(
+            mean_vel_pct.index.astype(float), mean_vel_pct[lbl],
+            marker=marker_map.get(lbl, 'o'),  # ← マーカー指定
+            linestyle='-',                    # 実線
+            label=lbl, color='black'          # モノクロなので黒線
+        )
+    # axes[0].set_title('Mean Velocity', fontsize=17)
+    axes[0].set_ylabel('Percentage (%)', fontsize=13)
+    axes[0].set_xlabel('Mean Velocity (m/s)', fontsize=13)
+    axes[0].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[0].grid(True)
+    axes[0].legend(fontsize=legend_fontsize)
+
+    # 最大速度
+    for lbl in max_vel_pct.columns:
+        axes[1].plot(
+            max_vel_pct.index.astype(float), max_vel_pct[lbl],
+            marker=marker_map.get(lbl, 'o'),
+            linestyle='-',
+            label=lbl, color='black'
+        )
+    # axes[1].set_title('Max Velocity', fontsize=17)
+    axes[1].set_ylabel('Percentage (%)', fontsize=13)
+    axes[1].set_xlabel('Max Velocity (m/s)', fontsize=13)
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[1].grid(True)
+    axes[1].legend(fontsize=legend_fontsize)
+
+    # 最大加速度
+    for lbl in acc_pct.columns:
+        axes[2].plot(
+            acc_pct.index.astype(float), acc_pct[lbl],
+            marker=marker_map.get(lbl, 'o'),
+            linestyle='-',
+            label=lbl, color='black'
+        )
+    # axes[2].set_title('Max Acceleration', fontsize=17)
+    axes[2].set_ylabel('Percentage (%)', fontsize=13)
+    axes[2].set_xlabel('Max Acceleration (m/s²)', fontsize=13)
+    axes[2].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[2].grid(True)
+    axes[2].legend(fontsize=legend_fontsize)
+
+    plt.tight_layout(rect=(0, 0, 1, 0.96))
+    plt.savefig(f'{OUT_DIR}/velocity_distribution_mode_bw.png', dpi=300)
+    plt.close()
+def mode_change(df, cluster_col):
+    df['mode_label'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
+    return df
+
+
+
+
+def _best_text_color(color):
+    """背景色に対して読みやすい文字色（黒/白）を返す"""
+    return "black"
+    # r, g, b = mcolors.to_rgb(color)
+    # # 相対輝度 (WCAG)
+    # L = 0.2126*r + 0.7152*g + 0.0722*b
+    # return "black" if L > 0.6 else "white"
+
+def plot_multi_band_with_reference(
+    df,
+    value_cols,
+    *,
+    label_col="mode_label",
+    ref_title="地方都市",
+    ref_mode_share_ja=None,   # {"バス":1.3,"鉄道":2.2,"自転車":8.1,"徒歩・その他":12.7,"車":75.7}
+    mode_label_map_ja2en=None,
+    titles=None,
+    pct_label_threshold=0.02,
+    figsize=(12, 6.5),
+    savepath=None,
+    color_map=None,
+):
+    # --- ラベル対応 ---
+    if mode_label_map_ja2en is None:
+        mode_label_map_ja2en = {
+            "バス": "bus",
+            "鉄道": "train",
+            "自転車": "bike",
+            "徒歩・その他": "walk",
+            "車": "car",
+        }
+    # 逆引き（英→日）
+    mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
+
+    if ref_mode_share_ja is None:
+        ref_mode_share_ja = {"バス":1.3, "鉄道":2.2, "自転車":8.1, "徒歩・その他":12.7, "車":75.7}
+
+    # --- PT調査：比率＆描画順（降順） ---
+    ref_total = sum(ref_mode_share_ja.values()) or 1.0
+    ref_items = []
+    for ja, v in ref_mode_share_ja.items():
+        en = mode_label_map_ja2en.get(ja, ja)
+        ref_items.append((en, float(v)/ref_total))
+    ref_items.sort(key=lambda x: x[1], reverse=True)
+    ref_order = [lab for lab, _ in ref_items]  # ← 以降この順
+
+    # --- 図準備 ---
+    rows = 1 + len(value_cols)
+    if titles is None:
+        titles = value_cols
+    row_titles = [ref_title] + titles
+
+    fig, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True, constrained_layout=True)
+    if rows == 1:
+        axes = [axes]
+
+    xticks = [0, 0.25, 0.5, 0.75, 1.0]
+    xtlbls = [f"{int(t*100)}%" for t in xticks]
+
+    # ---------- 1段目（PT調査） ----------
+    ax0 = axes[0]
+    left = 0.0
+    for lab, w in ref_items:
+        face = (color_map or {}).get(lab, None)
+        bar = ax0.barh(0, w, left=left, align="edge", color=face, height=1.0)
+        if w >= pct_label_threshold:
+            ja = mode_label_map_en2ja.get(lab, lab)
+            ax0.text(left + w/2, 0,
+                     f"{ja}: {w*100:.1f}%",
+                     ha="center", va="top", fontsize=12, fontweight="bold",
+                     color=_best_text_color(bar[0].get_facecolor()))
+        left += w
+
+    ax0.set_xlim(0, 1); ax0.set_ylim(-0.5, 0.5); ax0.set_yticks([])
+    for s in ("left","right","top","bottom"):
+        ax0.spines[s].set_visible(False)
+    # 行タイトル：帯の“中央”に
+    ax0.text(-0.02, 0.75, row_titles[0], transform=ax0.transAxes,
+             ha="right", va="center", fontsize=13)
+
+    # ---------- 2段目以降 ----------
+    for ax, value_col, rtitle in zip(axes[1:], value_cols, row_titles[1:]):
+        # ラベル→値の合計→比率
+        prop = dict.fromkeys(ref_order, 0.0)
+        sub = df[[label_col, value_col]].copy()
+        total = float(sub[value_col].sum())
+        if total > 0 and np.isfinite(total):
+            g = sub.groupby(label_col, as_index=False)[value_col].sum()
+            for _, row in g.iterrows():
+                prop[str(row[label_col])] = float(row[value_col]) / total
+
+        left = 0.0
+        for lab in ref_order:
+            w = prop.get(lab, 0.0)
+            if w <= 0:
+                continue
+            face = (color_map or {}).get(lab, None)
+            bar = ax.barh(0, w, left=left, align="edge", color=face, height=1.0)
+            if w >= pct_label_threshold:
+                ja = mode_label_map_en2ja.get(lab, lab)
+                ax.text(left + w/2, 0,
+                        f"{ja}: {w*100:.1f}%",
+                        ha="center", va="top", fontsize=12, fontweight="bold",
+                        color=_best_text_color(bar[0].get_facecolor()))
+            left += w
+
+        ax.set_xlim(0, 1); ax.set_ylim(-0.5, 0.5); ax.set_yticks([])
+        for s in ("left","right","top","bottom"):
+            ax.spines[s].set_visible(False)
+        # 行タイトル：中央に
+        ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
+                ha="right", va="center", fontsize=13)
+
+    # x 目盛は最下段のみ
+    for ax in axes[:-1]:
+        ax.set_xticks([])
+    axes[-1].set_xticks(xticks)
+    axes[-1].set_xticklabels(xtlbls, fontsize=11)
+
+
+    if savepath:
+        os.makedirs(os.path.dirname(savepath), exist_ok=True)
+        plt.savefig(savepath, dpi=220, bbox_inches="tight")
+    
+
+
+
+

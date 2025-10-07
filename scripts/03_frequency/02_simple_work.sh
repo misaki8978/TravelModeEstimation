@@ -4,12 +4,12 @@
 #$ -cwd
 #$ -V
 #$ -N simple_work
-#$ -q all.q@Claudette
-#$ -pe smp 1
+#$ -q all.q@Dwight
+#$ -pe smp 10
 #$ -o logs/simple_work.out
 #$ -e logs/simple_work.err
 
-place_year="09_nagasaki_2019"  #ここを変更！
+place_year="07_osaka_2019"  #ここを変更！
 
 DATA_DIR1="/home/data/fukui/interim/agg_before_filter/${place_year}/bulk/"
 DATA_DIR2="/home/data/fukui/interim/agg_before_filter/${place_year}b/bulk/"

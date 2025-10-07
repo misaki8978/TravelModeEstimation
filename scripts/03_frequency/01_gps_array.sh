@@ -7,14 +7,14 @@
 #$ -q all.q@Dwight
 #$ -pe smp 8
 #$ -tc 5
-#$ -t 1-__NUM__
-#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
-#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
+#$ -t 1-66
+#$ -o logs/07_osaka_2019b/$TASK_ID.out
+#$ -e logs/07_osaka_2019b/$TASK_ID.err
 
 
-echo "Using place_year: __PLACE_YEAR__" >&1
+echo "Using place_year: 07_osaka_2019b" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/__PLACE_YEAR__"
+CHUNK_DIR="$DATA_DIR/interim/chunks/07_osaka_2019b"
 
 echo "CHUNK: $CHUNK_DIR"
 

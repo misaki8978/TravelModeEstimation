@@ -5,7 +5,8 @@ import pandas as pd
 import gzip
 from datetime import datetime, timedelta
 import warnings
-
+import multiprocessing
+from functools import partial
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
 
@@ -14,16 +15,12 @@ warnings.filterwarnings('ignore')
 
 # --- 引数解析 ---
 args = sys.argv[1:-2]
-if '--' not in args or len(args) < 3:
-    log_message(
-        f"Usage: python gps_data_filter.py <filter_files> -- <gps_files>", 
-        f"/home/fukui/workspace/TravelModeEstimation/logs/log_sample_data.txt"
-    )
-    sys.exit(1)
+
 
 split_idx = args.index('--')
 filter_files, gps_files = args[:split_idx], args[split_idx + 1:]
-
+first_file = os.path.basename(gps_files[0])
+file_number = os.path.splitext(os.path.splitext(first_file)[0])[0]
 _path = os.path.dirname(gps_files[-1])
 path_parts = _path.split("/")
 # 最後の2つの要素を取得
@@ -43,7 +40,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_{place}.txt"
 
 weekly_filter = pd.concat(
-                          [pd.read_csv(f) for f in filter_files], 
+                          [pd.read_csv(f, compression="gzip") for f in filter_files], 
                           axis='index',
                           ignore_index=True
                          )\
@@ -56,43 +53,51 @@ weekly_filter = pd.concat(
 # log_message(f"{weekly_filter.head()}")
 
 weekly_records = []
-for filename in gps_files:
-    try:
-        with gzip.open(filename, 'rt') as f:
-            df = pd.read_csv(f)\
-                .loc[lambda x: x['hashed_adid'].notna()]\
-                .assign(
-                    datetime=lambda x: pd.to_datetime(x['datetime'], errors='coerce'),
-                    week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
-                )\
-                .merge(weekly_filter[['hashed_adid', 'week_start']], on=['hashed_adid', 'week_start'], how='inner')
-            weekly_records.append(df)
-            # log_message(f"{df.shape[0]}")
-            f.close()
-    except FileNotFoundError:
-        log_message(
-            f"ファイル {filename} が見つかりませんでした。", 
-            message_path
-        )
+#filterにかけてそのぶんだけ抽出
+def process_chunk(
+    f: str,
+    weekly_filter: pd.DataFrame
+):
+    df = pd.read_csv(f, compression="gzip")\
+        .loc[lambda x: x['hashed_adid'].notna()]\
+        .assign(
+            datetime=lambda x: pd.to_datetime(x['datetime'], errors='coerce'),
+            week_start=lambda x: x['datetime'].dt.date - pd.to_timedelta((x['datetime'].dt.weekday + 1) % 7, unit='d')
+        )\
+        .merge(weekly_filter[['hashed_adid', 'week_start']], on=['hashed_adid', 'week_start'], how='inner')\
+        .drop(columns=["uuid", 'mesh', 'os'])
+    return df
 
+process_func = partial(
+                        process_chunk,
+                        weekly_filter=weekly_filter
+                        )
+
+tasks = gps_files
+
+with multiprocessing.Pool(processes=8) as pool:
+    results = pool.map(
+        process_func, tasks
+    )   
+for res in results:
+    weekly_records.append(res)
+
+# 1. より効率的なDataFrame結合（concatの代わりにリスト内包表記を使用）
 if weekly_records:
-    result = pd.concat(
-                       weekly_records, ignore_index=True
-                       )\
-               .reset_index(drop=True)
-
-    # ファイル名を取得
-    first_file = os.path.basename(gps_files[0])
-    first_file_number = os.path.splitext(first_file)[0]
-    file_number = os.path.splitext(first_file_number)[0]
-
-    chunk_size = 1600000
-    #log_message(f"file_number: {file_number}")
-    for i in range(0, len(result), chunk_size):
-        chunk = result[i:i + chunk_size]
-        output_file_name = f"{input_folder}_{file_number}_4500_gps_{(i // chunk_size + 1):02d}.csv.gz"
-        chunk.to_csv(f"{OUT_DIR}/{output_file_name}", index=False, compression='gzip')
-        log_message(f"Saved weekly_gps.csv with {len(chunk)} rows / {result.shape[0]} rows.", message_path)
-else:
-    log_message("No valid data processed.", message_path)
+    # 空のDataFrameを除外してから結合
+    valid_records = [df for df in weekly_records if not df.empty]
+    if valid_records:
+        final_result = pd.concat(valid_records, ignore_index=True)
+        
+        
+        log_message(f"final_result: {len(final_result)}", message_path)
+        
+        
+        chunk_size = 1600000
+        #log_message(f"file_number: {file_number}")
+        for i in range(0, len(final_result), chunk_size):
+            chunk = final_result[i:i + chunk_size]
+            output_file_name = f"{file_number}_raw_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
+            chunk.to_csv(f"{OUT_DIR}{output_file_name}", index=False, compression='gzip')
+            log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {final_result.shape[0]} rows.", message_path)
     

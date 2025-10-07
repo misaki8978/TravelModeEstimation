@@ -4,7 +4,7 @@
 #$ -cwd
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@Cheryl
+#$ -q all.q@Claudette
 #$ -pe smp 9
 #$ -t 1-__NUM__
 #$ -tc 5

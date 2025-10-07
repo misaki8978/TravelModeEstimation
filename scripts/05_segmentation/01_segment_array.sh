@@ -4,9 +4,9 @@
 #$ -cwd
 #$ -V
 #$ -N gps_segmentation
-#$ -q all.q@Jake
+#$ -q all.q@Claudette
 #$ -pe smp 8
-#$ -t 1-5
+#$ -t 1-12
 #$ -o logs/09_nagasaki_2019/$TASK_ID.out
 #$ -e logs/09_nagasaki_2019/$TASK_ID.err
 

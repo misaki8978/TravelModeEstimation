@@ -12,9 +12,9 @@
 PLACE="09_nagasaki"
 YEAR="2019"
 
-INPUT_DIR="$DATA_DIR/processed/05_01_${PLACE}/${YEAR}_weekly"
-# FILTERED_DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
-INPUT_FILES=(${INPUT_DIR}/*.csv.gz)
+# INPUT_DIR="$DATA_DIR/processed/05_01_${PLACE}_replay/${YEAR}_weekly_basic"
+FILTERED_DIR="$DATA_DIR/processed/05_01_${PLACE}/${YEAR}_weekly"
+INPUT_FILES=(${FILTERED_DIR}/*.csv.gz)
 
 python3 /home/fukui/workspace/TravelModeEstimation/scripts/01_obsevation/03_segment_analysis.py "${INPUT_FILES[@]}"
 

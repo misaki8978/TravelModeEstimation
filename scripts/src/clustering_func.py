@@ -19,18 +19,17 @@ from log_message import log_message
 
 message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_06_clustering.txt"
 
-def clustering(df_clean, feature_cols, i):
+def clustering(df_clean, feature_cols, gis):
 
 
     # スケーリング
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df_clean[feature_cols])
-    random_state = [42, 10, 21, 13, 36]
-    kmeans = KMeans(n_clusters=4, random_state=random_state[i])
+    kmeans = KMeans(n_clusters=4, random_state=21)
     clusters = kmeans.fit_predict(X_scaled)
 
     # 結果をデータフレームに追加
-    df_clean[f'cluster_{i}'] = clusters
+    df_clean[f'cluster_{gis}'] = clusters
 
     cluster_centers = pd.DataFrame(
         scaler.inverse_transform(kmeans.cluster_centers_),
@@ -103,147 +102,74 @@ def fuzzy_silhouette_score(X, cntr, u, m=1.5):
     return overall_score, s
 
 
-def fuzzy_clustering(df_clean, feature_cols, OUT_DIR):
-    log_message(f'{df_clean[feature_cols].corr()}', message_path)
-    # 追加: 無限大をNaNに置換し、欠損行を削除
-    df_clean[feature_cols] = df_clean[feature_cols].replace([np.inf, -np.inf], np.nan)
-    df_clean = df_clean.dropna(subset=feature_cols)
-    #スケーリング
+def fuzzy_clustering(df_clean, cols, OUT_DIR, gis):
+    if gis == "normal":
+        # 無限大やNaNの処理
+        df_all = df_clean.copy()
+        df_all[cols] = df_clean[cols].replace([np.inf, -np.inf], np.nan)
+        df_all = df_all.dropna(subset=cols)
+    else:
+        df_all = df_clean.copy()
+    # df_target = df_target[df_target["bearing_change_rate"] != 0]
+    # log_message(f"{df_all['label'].value_counts()}", message_path)
+
+    # target_mask = df_target["label"] == "non-walk"
+    df_target = df_all.query("label == 'non-walk'")
+    # log_message(f"{len(df_target)}", message_path)
+
+    # スケーリング
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_clean[feature_cols])
-    # スケール後の列を「_scaled」付きで追加
-    for i, col in enumerate(feature_cols):
-        df_clean[f"{col}_scaled"] = X_scaled[:, i]
-    
-    # 転置（skfuzzy は shape=(features, samples) を要求するため）
-    scaled_cols = [f"{col}_scaled" for col in feature_cols]
-    X_scaled_T = df_clean[scaled_cols].values.T
-    # Fuzzy k-means (cmeans) クラスタリング
+    X_scaled = scaler.fit_transform(df_target[cols])
+
+    # スケール後の列を追加
+    for i, col in enumerate(cols):
+        df_target[f"{col}_scaled"] = X_scaled[:, i]
+
+    # 転置
+    scaled_cols = [f"{col}_scaled" for col in cols]
+    X_scaled_T = df_target[scaled_cols].values.T
+
+    # Fuzzy c-means
     n_clusters = 4
     cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(
         X_scaled_T, c=n_clusters, m=1.5, error=0.005, maxiter=1000, init=None, seed=0
     )
 
-    # シルエットスコアを計算
-    # overall_score, s = fuzzy_silhouette_score(X_scaled, cntr, u)
+    # シルエットスコア
     overall_score = silhouette_score(X_scaled, np.argmax(u, axis=0))
-    log_message(f"Fuzzy Silhouette Score: {overall_score:.3f}", message_path)
+    log_message(f"{gis} Fuzzy Silhouette Score: {overall_score:.3f}", message_path)
 
-    # しきい値を決定（例: 0.7未満の点を除外）
-    # 最大所属度を計算
-    max_membership = np.max(u, axis=0)
+    # 曖昧な点を除外
+    # max_membership = np.max(u, axis=0)
+    # threshold = 0.9
+    # mask = max_membership >= threshold
+    # X_filtered = X_scaled[mask]
+    # u_filtered = u[:, mask]
 
-    # しきい値を決定（例: 0.7未満の点を除外）
-    threshold = 0.9
-    mask = max_membership >= threshold
+    # overall_score_filtered = silhouette_score(X_filtered, np.argmax(u_filtered, axis=0))
+    # log_message(f"{gis} 曖昧な点を除外した後のfuzzyシルエットスコア: {overall_score_filtered:.4f}", message_path)
 
-    # 曖昧な点を除外したデータと所属度
-    X_filtered = X_scaled[mask]        # 元データ
-    u_filtered = u[:, mask]            # 所属度
-    log_message(f"フィルタ後のデータ数: {X_filtered.shape[0]} / {X_scaled.shape[0]}", message_path)
-
-    # Fuzzyシルエットスコア再計算
-    # overall_score_filtered, _ = fuzzy_silhouette_score(X_filtered, cntr, u_filtered, m=1.5)
-    overall_score_filtered = silhouette_score(X_filtered, np.argmax(u_filtered, axis=0))
-
-    log_message(f"曖昧な点を除外した後のfuzzyシルエットスコア: {overall_score_filtered:.4f}", message_path)
-
+    # クラスタラベルを付与
     cluster_labels = np.argmax(u, axis=0)
+    df_target[f"fuzzy_cluster_{gis}"] = cluster_labels
+    df_target[f"fuzzy_membership_{gis}"] = u.T.tolist()
+    df_target[f"max_membership_{gis}"] = df_target[f"fuzzy_membership_{gis}"].apply(max)
 
-    # 元のデータフレームにクラスタラベルを追加
-    df_clean['fuzzy_cluster'] = cluster_labels
-    df_clean['fuzzy_membership'] = u.T.tolist()  # 各クラスタへの所属度も保存
-    df_clean["max_membership"] = df_clean["fuzzy_membership"].apply(max)
+    # 6) 元データに統合（walk = -1、フィルタ落ちnon-walkは -2 にして区別）
+    clus_col = f"fuzzy_cluster_{gis}"
+    memb_col = f"fuzzy_membership_{gis}"
+    maxm_col = f"max_membership_{gis}"
 
-    # クラスタごとの中心値
-    cluster_centers = scaler.inverse_transform(cntr)
-    log_message(f"{cluster_centers}", message_path)
-    # log_message(f"{df_clean.head()}", message_path)
+    df_all[clus_col] = -1          # まず全行を walk 相当で初期化
+    df_all[memb_col] = np.nan
+    df_all[maxm_col] = np.nan
 
+    # フィルタに残った non-walk のみ上書き
+    df_all.loc[df_target.index, [clus_col, memb_col, maxm_col]] = \
+        df_target[[clus_col, memb_col, maxm_col]]
+    # 従来の戻り値を維持しつつ、出力用も返す
+    return df_all
 
-    # u: (c, N)
-    N = u.shape[1]
-    PC = np.sum(u**2) / N
-    PE = -np.sum(u * np.log(u + 1e-12)) / N  # log(0)防止に微小値を足す
-    log_message(f"Partition Coefficient: {PC:.4f}", message_path)
-    log_message(f"Partition Entropy:     {PE:.4f}", message_path)
-
-    
-    # # 次元圧縮（2D）
-    # pca = PCA(n_components=2)
-    # X_pca = pca.fit_transform(X_scaled)
-
-    # カラーマップ設定
-    colors = ['#ff0000', '#7cfc00', '#ffa500', '#00bfff']
-    # x, y 軸のデータ
-    x = df_clean['duration_sec']
-    # y = df_clean['bearing_rate_rad']
-    # y = df_clean['mean_speed_mps']
-    # cluster_labels = np.argmax(u, axis=0)  # 最大所属度のクラスタ番号（サンプル毎）
-    max_membership = np.max(u, axis=0)     # 最大所属度の値（サンプル毎）
-
-    # ヒストグラムを描画
-    plt.figure(figsize=(8, 5))
-    plt.hist(max_membership, bins=20, color="skyblue", edgecolor="k", alpha=0.7)
-    plt.title("Distribution of Maximum Membership Degrees")
-    plt.xlabel("Maximum Membership Degree")
-    plt.ylabel("Number of Samples")
-    plt.grid(True, linestyle="--", alpha=0.5)
-    plt.savefig(f'{OUT_DIR}/max_membership_histogram.png')
-
-
-    # 2) 全体のシルエット係数
-    score = silhouette_score(X_scaled, cluster_labels)
-    log_message(f"Silhouette Coefficient: {score:.3f}", message_path)
-
-    # 3) サンプルごとのシルエット値を計算してプロット
-    sil_vals = silhouette_samples(X_scaled, cluster_labels)
-    n_clusters = u.shape[0]
-    # 4) シルエットスコアのプロット
-    fig, ax = plt.subplots(figsize=(6, 4))
-    y_lower = 10
-    for i in range(n_clusters):
-        cluster_sil_vals = sil_vals[cluster_labels == i]
-        cluster_sil_vals.sort()
-        size_cluster = cluster_sil_vals.shape[0]
-        y_upper = y_lower + size_cluster
-
-        color = cm.nipy_spectral(float(i) / n_clusters)
-        ax.fill_betweenx(np.arange(y_lower, y_upper),
-                        0, cluster_sil_vals,
-                        facecolor=color, edgecolor=color, alpha=0.7)
-        ax.text(-0.05, y_lower + 0.5 * size_cluster, str(i))
-        y_lower = y_upper + 10  # 次クラスのオフセット
-
-    ax.set_title("Silhouette Plot for Fuzzy C-Means (crisp labels)")
-    ax.set_xlabel("Silhouette coefficient values")
-    ax.set_ylabel("Cluster label")
-    ax.axvline(x=score, color="red", linestyle="--")
-    plt.tight_layout()
-    fig.savefig(f'{OUT_DIR}/silhouette_plot.png')
-
-    # --- 4. 次元削減（PCA） ---
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-
-    # --- 5. 可視化 ---
-    plt.figure(figsize=(8,6))
-    for i in range(n_clusters):
-        plt.scatter(
-            X_pca[cluster_labels == i, 0],
-            X_pca[cluster_labels == i, 1],
-            label=f'Cluster {i}', alpha=0.6)
-
-    plt.title('Fuzzy c-means clustering (PCA 2D)')
-    plt.xlabel('PC1')
-    plt.ylabel('PC2')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(f'{OUT_DIR}/pca_plot.png')
-
-
-
-    return df_clean
 
 # RGBAカラーの生成
 def rgba_color(hex_color, alpha):
@@ -251,7 +177,16 @@ def rgba_color(hex_color, alpha):
     r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     return f'rgba({r},{g},{b},{alpha})'
 
-
+# 最大所属度のヒストグラム
+def Maximum_Membership_Degrees(df, OUT_DIR, gis):
+    df_clean = df.query("label == 'non-walk'")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(df_clean[f"max_membership_{gis}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
+    ax.set_title(f"{gis} Distribution of Maximum Membership Degrees")
+    ax.set_xlabel("Maximum Membership Degree")
+    ax.set_ylabel("Number of Samples")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    fig.savefig(f'{OUT_DIR}/{gis}_max_membership_histogram.png')
 
 
 def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
@@ -321,6 +256,8 @@ def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
                    tickfont_size=13,
                    type="log",
          ),
+        aspectmode="manual",
+        aspectratio=dict(x=1, y=1, z=1),
         # camera=dict(
         #     eye=dict(x=2, y=2, z=1)
         # ), 
@@ -355,14 +292,29 @@ def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
     fig.write_html(f"{OUT_DIR}/fuzzy_kmeans_opacity.html")
     return df_clean
 
-def cluster_boxplot(df_clean, feature_cols, OUT_DIR):
-    plt.figure(figsize=(16, 8))
+def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
+    # 特徴量数に応じて行数を自動調整（列数は4固定）
+    df_clean = df.query("label == 'non-walk'")
+    n_features = len(feature_cols)
+    ncols = 4
+    nrows = int(np.ceil(n_features / ncols)) if n_features > 0 else 1
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
+    axes = np.atleast_1d(axes).ravel()
+
     for i, col in enumerate(feature_cols):
-        plt.subplot(2, 4, i+1)
-        sns.boxplot(x=df_clean['fuzzy_cluster'] + 1, y=col, data=df_clean)
-        plt.title(col)
-        plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}/cluster_fuzzy_boxplot.png')
+        ax = axes[i]
+        sns.boxplot(ax=ax, x=df_clean[f'fuzzy_cluster_{gis}'] + 1, y=col, data=df_clean)
+        ax.set_title(col)
+        if col == "all_distance":
+            ax.set_yscale("log")
+
+    # 余ったAxesを非表示（または削除）
+    for j in range(n_features, nrows * ncols):
+        fig.delaxes(axes[j])
+
+    fig.tight_layout()
+    fig.savefig(f'{OUT_DIR}/cluster_fuzzy_boxplot_{gis}.png')
 
 
 def feature_cluster_centroids(df, feature_cols):
@@ -411,7 +363,7 @@ def feature_cluster_centroids(df, feature_cols):
 
 
 
-def cluster_pairplot(df, feature_cols, OUT_DIR):
+def cluster_pairplot(df, feature_cols, OUT_DIR, gis):
     # cluster_0 をカテゴリ型にしておくと色分けが綺麗になる
     df['cluster_0'] = df['cluster_0'].astype(str)
     # feature_cols だけ抽出
@@ -420,3 +372,107 @@ def cluster_pairplot(df, feature_cols, OUT_DIR):
     # ペアプロット
     sns.pairplot(pairplot_df, hue="cluster_0", palette="tab10", corner=True, plot_kws={'alpha':0.5, 's':10})
     plt.savefig(f'{OUT_DIR}/cluster_pairplot.png')
+
+
+def map_plot(df, OUT_DIR, gdf_pref, bus_gdf, train_gdf, gis):
+    fig, axes = plt.subplots(figsize=(10, 10) , nrows=2, ncols=2)
+    nagasaki_gdf_pref = gdf_pref.query("prefecture == '長崎県'", engine='python')
+    for i in range(4):
+        df_cluster = df[df[f'fuzzy_cluster_{gis}'] == i]
+        ax = axes[i//2, i%2]
+        nagasaki_gdf_pref.plot(
+            ax=axes[i//2, i%2], 
+            color='0.8', 
+            # edgecolor='0.5',
+            # linewidth=3
+            )
+        # bus_gdf.plot(
+        #     ax=axes[i//2, i%2], 
+        #     color='skyblue', 
+        #     linewidth=1.1, 
+        #     label='Bus Routes'
+        #     )
+        # train_gdf.plot(
+        #     ax=axes[i//2, i%2], 
+        #     color='pink', 
+        #     linewidth=1.1, 
+        #     label='Rail Routes'
+        #     )
+        df_cluster.plot(
+            ax=axes[i//2, i%2], 
+            color='0.0', 
+            markersize=0.5, 
+            alpha=0.1
+            )
+        axes[i//2, i%2].set_title(f'Cluster {i+1}  {gis} ver.')
+        axes[i//2, i%2].set_axis_off()
+        axes[i//2, i%2].set_xlim(540000, 640000)
+        axes[i//2, i%2].set_ylim(3600000, 3700000)
+        fig.savefig(f'{OUT_DIR}/cluster_map_{gis}.png')
+    
+
+    return df
+
+
+def cluster_analysis(df, OUT_DIR):
+    df["segment_ratio"] = df["segment_count"] / df["segment_count"].sum()
+    df["segment_time_ratio"] = df["all_time"] / df["all_time"].sum()
+    df["segment_distance_ratio"] = df["all_distance"] / df["all_distance"].sum()
+ 
+
+    # --- 描画設定（サイズ・フォント・色） ---
+    fig, ax = plt.subplots(ncols=3, nrows=1, figsize=(18, 6), constrained_layout=True)
+
+    if 'mode_label' in df.columns:
+        labels = df['mode_label'].apply(lambda k: f'Cluster {df["mode_label"]}').tolist()
+    # else:
+    #     labels = [f'Cluster {i+1}' for i in range(len(df))]
+
+    colors = plt.get_cmap('tab10').colors[:len(labels)]
+    textprops = {"fontsize": 12}
+    wedgeprops = {"width": 0.6}  # ドーナツ風で見やすく
+
+    # 1) セグメント数比率
+    ax[0].pie(
+        df['segment_ratio'],
+        labels=labels,
+        colors=colors,
+        autopct='%.1f%%',
+        pctdistance=0.75,
+        startangle=90,
+        textprops=textprops,
+        wedgeprops=wedgeprops,
+    )
+    ax[0].set_title('Cluster Share by Segment Count', fontsize=14)
+    ax[0].set_aspect('equal')
+
+    # 2) 時間比率
+    ax[1].pie(
+        df['segment_time_ratio'],
+        labels=labels,
+        colors=colors,
+        autopct='%.1f%%',
+        pctdistance=0.75,
+        startangle=90,
+        textprops=textprops,
+        wedgeprops=wedgeprops,
+    )
+    ax[1].set_title('Cluster Share by Segment Time', fontsize=14)
+    ax[1].set_aspect('equal')
+
+    ax[2].pie(
+        df['segment_distance_ratio'],
+        labels=labels,
+        colors=colors,
+        autopct='%.1f%%',
+        pctdistance=0.75,
+        startangle=90,
+        textprops=textprops,
+        wedgeprops=wedgeprops,
+    )
+    ax[2].set_title('Cluster Share by Segment Distance', fontsize=14)
+    ax[2].set_aspect('equal')
+
+    # 仕上げ
+    fig.suptitle('Cluster Share Overview', fontsize=16)
+    fig.savefig(f'{OUT_DIR}/cluster_analysis.png', dpi=200, bbox_inches='tight')

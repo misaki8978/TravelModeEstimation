@@ -1,37 +1,39 @@
 import pandas as pd
 import numpy as np
-from math import sin, cos, atan2, sqrt
+from math import sin, cos, asin, sqrt, radians
 
-# 距離計算
-def haversine_distance(lat1, lon1, lat2, lon2):
-    R = 6371000.0
-    dlat = lat2 - lat1
+def getDistanceOfPoints(lat1, lon1, lat2, lon2):
+    # lat1 = np.radians(lat1.astype(float))
+    # lon1 = np.radians(lon1.astype(float))
+    # lat2 = np.radians(lat2.astype(float))
+    # lon2 = np.radians(lon2.astype(float))
     dlon = lon2 - lon1
-    a = np.sin(dlat / 2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2)**2
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    return R * c
+    dlat = lat2 - lat1
+    a = np.sin(dlat/2.0)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2
+    c = 2.0 * np.arcsin(np.sqrt(a))
+    m = 6371000 * c
+    return m
 
 #ポイント間の距離を計算
 def calculate_total_distance(segment):
     total_dist = 0.0
     for i in range(1, len(segment)):
-        lat1 = segment.iloc[i - 1]['latitude']
-        lon1 = segment.iloc[i - 1]['longitude']
-        lat2 = segment.iloc[i]['latitude']
-        lon2 = segment.iloc[i]['longitude']
-        total_dist += haversine_distance(lat1, lon1, lat2, lon2)
+        lat1 = segment.iloc[i - 1]['latitude_anonymous']
+        lon1 = segment.iloc[i - 1]['longitude_anonymous']
+        lat2 = segment.iloc[i]['latitude_anonymous']
+        lon2 = segment.iloc[i]['longitude_anonymous']
+        total_dist += getDistanceOfPoints(lat1, lon1, lat2, lon2)
     return total_dist
 
 def calculate_speed_and_acceleration(df):
     speed_df = df.assign(
                         time_diff_s=lambda x: x['datetime'].diff().dt.total_seconds(),
-                        prev_lat = lambda x: x['latitude'].shift(1),
-                        prev_lon = lambda x: x['longitude'].shift(1),
-                        distance=lambda x: haversine_distance(x['prev_lat'], x['prev_lon'], x['latitude'], x['longitude']),
+                        prev_lat = lambda x: x['latitude_anonymous'].shift(1),
+                        prev_lon = lambda x: x['longitude_anonymous'].shift(1),
+                        distance=lambda x: getDistanceOfPoints(x['prev_lat'], x['prev_lon'], x['latitude_anonymous'], x['longitude_anonymous']),
                         speed=lambda x: x['distance']/x['time_diff_s'],
-                        acceleration=lambda x: x['speed'].diff(1)/x['time_diff_s'],
-                        )\
-                .drop(columns=["prev_lat", "prev_lon"])
+                        acceleration=lambda x: x['speed'].diff()/x['time_diff_s'],
+                        )
     return speed_df
 
 def segment_by_label(df, v_thd, a_thd):
@@ -211,5 +213,9 @@ def process_all_segments(df, v_thd, a_thd, dist_thd1, dist_thd2, limit_thd):
     results = pd.concat(all_results)\
                 .sort_values(['move_id', 'datetime'])\
                 .reset_index(drop=True)
-    final_df = results[["hashed_adid", "datetime", "move_id", "segment_id", "label", "label_cer",  "speed", "acceleration", "distance", "time_diff_s", "latitude_anonymous", "longitude_anonymous", "accuracy"]]
+    final_df = results[["hashed_adid", "datetime", "move_id", "segment_id", "label", "label_cer",  "P_speed", "speed", "acceleration", "distance_m","distance", "time_diff_s", "latitude_anonymous", "longitude_anonymous", "accuracy"]]
+    final_df = final_df.assign(
+        latitude_anonymous = lambda x: np.degrees(x['latitude_anonymous']),
+        longitude_anonymous = lambda x: np.degrees(x['longitude_anonymous']),
+    )
     return final_df

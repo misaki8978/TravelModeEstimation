@@ -25,7 +25,7 @@ place = path_parts[-2]
 
 year_only = year.split("_")[0]
 
-OUT_DIR = "/home/data/fukui/outputs/figures/01_observation"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_weekly_data/{place}/{year}"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
@@ -33,8 +33,7 @@ weekly_records = []
 for file in files:
     try:
         with gzip.open(file, 'rt') as f:
-            df = pd.read_csv(f)\
-                   .query("count < 7000")\
+            df = pd.read_csv(f)
             # log_message(f"{(df.shape[0])}", message_path)
             weekly_records.append(df)
             f.close()
@@ -44,7 +43,7 @@ for file in files:
 df = pd.concat(weekly_records, ignore_index=True)
 
 log_message(f"{df.shape[0]} rows", message_path)
-log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
+# log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
 log_message(f"{df['count'].sum()} GPS points", message_path)
 log_message(f"{len(df['hashed_adid'].unique())} users", message_path)
 
@@ -132,5 +131,5 @@ ax_user.set_yscale('log')
 
 ax_user.grid(axis='both', which='major', color='gray', linestyle='--', linewidth=0.5)
 fig.tight_layout()
-fig.savefig(f"{OUT_DIR}/01_{year}_{place}.png")
+fig.savefig(f"{OUT_DIR}/weekly_base_plot.png")
 plt.close(fig)

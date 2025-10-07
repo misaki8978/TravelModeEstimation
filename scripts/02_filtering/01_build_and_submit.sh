@@ -3,12 +3,13 @@
 #$ -V
 #$ -N gps_weekly
 #$ -q all.q@Cheryl
-
+#$ -pe smp 8
+#$ -tc 5
 # 01_build_and_submit.sh
 
 cd $HOME/workspace/TravelModeEstimation
 
-place_year="09_nagasaki_2019"  #ここを変更！
+place_year="07_osaka_2019"  #ここを変更！
 echo "place_year=${place_year}" >&1
 
 PLACE_YEAR=${place_year} bash ./scripts/02_filtering/01_make_chunks.sh >&1

@@ -16,6 +16,7 @@ from functools import partial
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
 from segmentation_func import process_all_segments
+# from segmentation_replay_func import process_all_segments
 
 warnings.filterwarnings('ignore')
 
@@ -26,7 +27,7 @@ dist1 = 10          # short セグメントと判定する距離 (m)
 dist2 = 50         # uncertain/certain 判定用距離 (m)
 limit = 4           # uncertain セグメント連続回数の閾値
 
-message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_05_segment_replay.txt"
+message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_05_segment_hariharan.txt"
 
 
 file = sys.argv[1]
@@ -34,17 +35,20 @@ path_parts = file.split("/")
 # log_message(f"{path_parts}", message_path)
 # 最後の2つの要素を取得
 place = "_".join(path_parts[-3].split("_")[-2:])
+# place = "_".join(path_parts[-3].split("_")[2:4])
+# year = "_".join(path_parts[-3].split("_")[-2:])
 year = path_parts[-2]
 month = path_parts[-1].split("_")[0]
-OUT_DIR = f"/home/data/fukui/processed/05_01_{place}_replay/{year}/"
+# month = os.path.splitext(path_parts[-1])[0].split("_")[-1]
+
+log_message(f"{place} {year} {month}", message_path)
+
+OUT_DIR = f"/home/data/fukui/processed/05_01_{place}/{year}/"
 os.makedirs(OUT_DIR, exist_ok=True)
 df = pd.read_csv(file, parse_dates=["datetime"])\
-       .sort_values(["hashed_adid", "datetime"])\
-       .assign(
-                latitude=lambda x: np.radians(x["latitude_anonymous"]),
-                longitude=lambda x: np.radians(x["longitude_anonymous"]),
-                )
+        .sort_values(["hashed_adid", "datetime"])
 
+log_message(f"df緯度経度のソート前: {df['latitude_anonymous'].min()} {df['latitude_anonymous'].max()} {df['longitude_anonymous'].min()} {df['longitude_anonymous'].max()}", message_path)
 
 def _process_task(
                 task: str,
@@ -59,6 +63,7 @@ def _process_task(
 
     df = df.query("hashed_adid == @task")
     df = process_all_segments(df, v_thd, a_thd, dist_thd1, dist_thd2, limit_thd)
+    # df = process_group(df, v_thd, a_thd, dist_thd1, dist_thd2, limit_thd)
     return df
 
 

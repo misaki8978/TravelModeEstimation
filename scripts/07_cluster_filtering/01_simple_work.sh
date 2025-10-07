@@ -13,9 +13,9 @@ PLACE="09_nagasaki"
 YEAR="2019"
 
 FILTER_DIR="$DATA_DIR/processed/06_02_${PLACE}/${YEAR}_weekly"
-FILTER_FILES=(${FILTER_DIR}/*.csv.gz)
+FILTER_FILES=(${FILTER_DIR}/*cluster.csv.gz)
 
-FILTERED_DIR="$DATA_DIR/processed/05_01_${PLACE}/${YEAR}_weekly"
-FILTERED_FILES=(${FILTERED_DIR}/*.csv.gz)
+FILTERED_DIR="$DATA_DIR/processed/09_04_${PLACE}/${YEAR}_weekly"
+FILTERED_FILES=(${FILTERED_DIR}/*isin.csv.gz)
 
 python3 /home/fukui/workspace/TravelModeEstimation/scripts/07_cluster_filtering/01_filtering.py "${FILTER_FILES[@]}" -- "${FILTERED_FILES[@]}"

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from sklearn.cluster import DBSCAN
 from scipy.spatial.distance import pdist
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2, asin
 
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
@@ -20,6 +20,13 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
 
+def getDistanceOfPoints(lat1, lon1, lat2, lon2):
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    m = 6371000 * c
+    return m
 # 直径計算
 def compute_diameter(coords):
     # coordsは[[lat1, lon1], [lat2, lon2], ...]の形式
@@ -132,99 +139,44 @@ def assign_stay_ids(df, clustered_stays):
 
 #tripごとのサマリー作成
 def func_move_summary(move_df):
-    move_df = move_df.assign(datetime=lambda x: pd.to_datetime(x['datetime']),
-                             latitude=lambda x: x['latitude_anonymous'].astype(np.float64),
-                             longitude=lambda x: x['longitude_anonymous'].astype(np.float64)
-                             )
-    # ソート（移動順に並べる）
-    move_df = move_df.sort_values(['move_id', 'datetime']).assign(
-        lat_next=lambda x: x.groupby('move_id')['latitude'].shift(-1),
-        lon_next=lambda x: x.groupby('move_id')['longitude'].shift(-1)
-    ).assign(
-        segment_distance=lambda x: x.apply(
-            lambda row: haversine_distance(
-                row['latitude'],
-                row['longitude'],
-                row['lat_next'],
-                row['lon_next']
-            ) if pd.notna(row['lat_next']) else 0,
-            axis=1
-        )
-    )
 
     # サマリー統計量の計算
     move_summary = move_df.groupby('move_id', as_index=False).agg({
         'hashed_adid': 'first',
-        'latitude': 'count',
-        'segment_distance': 'sum',
+        'datetime': 'count',
+        'distance_m': 'sum',
         'P_speed': 'mean',
+        'time_diff_s': 'sum'
     }).rename(columns={
-        'latitude': 'point_count',
-        'segment_distance': 'total_distance_m',
+        'datetime': 'point_count',
+        'distance_m': 'move_total_distance',
         'P_speed': 'P_speed_avg',
-        # 'datetime': 'move_duration_sec'
+        'time_diff_s': 'move_total_duration_sec'
     })
     
-    # def calc_move_duration_sec(x):
-    #     return (x.max() - x.min()).total_seconds()
-    
-    # 時間差を別途計算
-    duration_sec = move_df.filter(items=['move_id', 'datetime'])\
-                          .groupby(by=['move_id'], as_index=False)\
-                          .agg(
-                              #    lambda x: (x.max() - x.min()).total_seconds()
-                              #    {'move_duration_sec': calc_move_duration_sec}
-                             move_duration=('datetime', lambda x: x.max() - x.min())
-                             )\
-                          .merge(move_summary, on='move_id', how='right')\
-                          .dropna(subset=['move_duration'], axis='index')\
-                          .assign(
-                                move_duration_sec=lambda x: x['move_duration'].apply(lambda x: x.total_seconds()).values#[0].astype(np.float64)
-                                                            if x['move_duration'].apply(lambda x: x.total_seconds()).size != 0
-                                                            else 0,
-                                S_speed_avg=lambda x: x['total_distance_m'] / x['move_duration_sec'].astype(np.float64),
-                                )
-    # log_message(f"duration_sec: {duration_sec.head()}", 
-    #             message_path)
-                        #   .assign(
-                        #           move_duration_sec=lambda x: (x['move_duration'].total_seconds()).values[0],
-                        #           S_speed_avg=lambda x: np.where(
-                        #             x['total_distance_m'] != 0,
-                        #             x['total_distance_m'] / x['move_duration_sec'],
-                        #             0)
-                        #         )
-    # 結合前に dropna で安全な行だけにする
-    # duration_sec = duration_sec.dropna().astype(float)
-
-    # move_summary にマージ
-
-    # move_summary = move_summary.join(duration_sec.rename('move_duration_sec'), how='left')
-
-    # move_summary['S_speed_avg'] = move_summary['total_distance_m'] / move_summary['move_duration_sec']
-    
-    return duration_sec
+    return move_summary
 
 #速度計算  
 def speed_calc(move_df):
-    move_df = move_df.assign(datetime=lambda x: pd.to_datetime(x['datetime']),
-                             latitude=lambda x: x['latitude_anonymous'].astype(np.float64),
-                             longitude=lambda x: x['longitude_anonymous'].astype(np.float64)
-                             )
+
+    move_df = move_df\
+                    .assign(datetime=lambda x: pd.to_datetime(x['datetime'])
+                            )\
+                    .sort_values(['move_id', 'datetime'], ascending=[True, True])
     # 距離と時間差を使って各ポイントの速度 (m/s) を計算
-    move_df = move_df.sort_values(['move_id'])\
-                    .assign(
+    move_df = move_df.assign(
                         lat_prev=lambda x: x.groupby('move_id')['latitude'].shift(1),
                         lon_prev=lambda x: x.groupby('move_id')['longitude'].shift(1),
                         # time_prev=lambda x: x.groupby('move_id')['datetime'].shift(1),
-                        distance_m=lambda x: x.apply(lambda row: haversine_distance(
+                        distance_m=lambda x: x.apply(lambda row: getDistanceOfPoints(
                             row['lat_prev'], 
                             row['lon_prev'], 
                             row['latitude'], 
                             row['longitude']
                         ) if pd.notna(row['lat_prev']) else 0, axis=1),
-                        time_diff_s=lambda x: x['datetime'].diff().dt.total_seconds(),
-                        P_speed=lambda x: x['distance_m'] / x['time_diff_s'],
-                    ).drop(columns=["lat_prev", "lon_prev", "latitude", "longitude"])
+                        time_diff_s=lambda x: x.groupby('move_id')['datetime'].diff().dt.total_seconds(),
+                        P_speed=lambda x: np.where(x['time_diff_s'] > 0, x['distance_m'] / x['time_diff_s'], np.nan),
+                    ).drop(columns=["uuid", 'mesh', 'os', 'time_diff_min', 'lat_prev', "lon_prev"])
     # # ステップ5: 異常値（40 m/s 超）を除外して別の DataFrame に保存
     # filtered_df = move_df[move_df['P_speed'] <= 30]\
     #                 .groupby('move_id')\

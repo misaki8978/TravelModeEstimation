@@ -2,7 +2,7 @@
 #$ -S /bin/bash
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@Cheryl
+#$ -q all.q@Claudette
 #$ -tc 5
 # 01_build_and_submit.sh
 

@@ -34,11 +34,11 @@ def init_worker(results_prev, func_name, month, msg_path):
     message_path = msg_path
 
 
-def worker(task_tuple):
-    target_id, df = task_tuple
-    roam_dist = 500
+def worker(task_id):
+    target_id = task_id
+    roam_dist = 200
     stay_dur = 600
-    eps_meters = 500
+    eps_meters = 200
     min_samples = 2
 
     # if func_name_global == "extract_stays_fast":
@@ -46,11 +46,14 @@ def worker(task_tuple):
     #     log_message(f"extract_stays_fast: {month_global} {target_id}", message_path)
     #     return extract_stays_fast(df, roam_dist, stay_dur)
     if func_name_global == "stayPointExtraction":
+        if target_id not in base_dict:
+            return pd.DataFrame(columns=["hashed_adid","latitude","longitude","datetime"])
+        df = base_dict[target_id]
         points = [
                     Point(row['latitude_anonymous'], row['longitude_anonymous'], row['datetime'], row['hashed_adid'])
                     for _, row in df.iterrows()
                 ]
-        # log_message(f"stayPointExtraction: {month_global} {target_id}", message_path)
+        log_message(f"stayPointExtraction: {month_global} {target_id}", message_path)
         return stayPointExtraction(points, roam_dist, stay_dur)
 
     elif func_name_global == "run_dbscan_on_stays":
@@ -71,8 +74,14 @@ def worker(task_tuple):
     elif func_name_global == "assign_stay_ids":
         if target_id in results_prev_dict:
             clustered_stays = results_prev_dict[target_id]
+            if target_id not in base_dict:
+                return pd.DataFrame(columns=["hashed_adid","latitude","longitude","datetime","stay_id"])
+            df = base_dict[target_id]
             return assign_stay_ids(df, clustered_stays)
         else:
+            if target_id not in base_dict:
+                return pd.DataFrame(columns=["hashed_adid","latitude","longitude","datetime","stay_id"])
+            df = base_dict[target_id]
             return df.assign(stay_id=-1)
 
     elif func_name_global == "stay_to_move":
@@ -102,7 +111,7 @@ def worker(task_tuple):
 
 if __name__ == "__main__":
     files = sys.argv[1:]
-    message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_04_stay_replay.txt"
+    message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_04_stay_multithread.txt"
 
     # path情報
     path_parts = files[0].split("/")
@@ -110,17 +119,20 @@ if __name__ == "__main__":
     year = path_parts[-4]
     month = path_parts[-1].split("_")[0]
 
-    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/"
+    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/hariharan"
+    # OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/basic"
+
     os.makedirs(OUT_DIR, exist_ok=True)
 
     # ===== データ読み込み & dict化 =====
     df = pd.read_csv(files[0], parse_dates=["datetime"], compression="gzip") \
             .assign(
-                latitude=lambda x: np.radians(x["latitude_anonymous"]),
-                longitude=lambda x: np.radians(x["longitude_anonymous"])
+                latitude=lambda x: np.radians(x["latitude_anonymous"].astype(float)),
+                longitude=lambda x: np.radians(x["longitude_anonymous"].astype(float))
             ).sort_values(by=["hashed_adid","datetime"], ascending=[True, True])
     base_dict = {k: v for k, v in df.groupby("hashed_adid")}
-    tasks = [(k, v) for k, v in base_dict.items()]  # ← ここがポイント
+    # 大量のDataFrameを子プロセスへ送らず、IDのみ渡す
+    tasks = list(base_dict.keys())
 
     funcs = [
         # "extract_stays_fast",
@@ -144,14 +156,14 @@ if __name__ == "__main__":
             continue
 
         # 並列処理
-        with mp.Pool(processes=6, initializer=init_worker,
+        with mp.Pool(processes=4, initializer=init_worker,
                      initargs=(results_prev_dict, func_name, month, message_path)) as pool:
             results = pool.map(worker, tasks)
             results = [r for r in results if r is not None]
         log_message(f"results: {len(results)}", message_path)
         results_df = pd.concat(results, ignore_index=True)
         results_df.to_csv(out_path, index=False)
-        log_message(f"results_df: {results_df.head()}", message_path)
+        # log_message(f"results_df: {results_df.head()}", message_path)
 
         # 次のフェーズ用にdict化して保持
         results_prev_dict = {k: v for k, v in results_df.groupby("hashed_adid")}
