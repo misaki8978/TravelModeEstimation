@@ -5,6 +5,7 @@ import numpy as np
 import geopandas as gpd
 import osmnx as ox
 import matplotlib.pyplot as plt
+import shapefile
 from shapely.geometry import Point
 from shapely.ops import unary_union
 from pyproj import Geod
@@ -15,20 +16,28 @@ sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
 log_path  = f"/home/fukui/workspace/TravelModeEstimation/logs/log_09_gis.txt"
 
+# 欠損した SHX を読み込み時に復元する（GDAL/OGR 設定）
+os.environ.setdefault("SHAPE_RESTORE_SHX", "YES")
 
 # ファイルを2つに分割して、バスのデータフレームとセグメントのgeopandasデータフレームに変換
 def division_several_file(files):
     split_idx = files.index('--')
     # log_message(f"{split_idx}", log_path)
-    file, gis_file = files[:split_idx], files[split_idx + 1]
+    file, gis_file, rail_file = files[:split_idx], files[split_idx + 1], files[-1]
     path_parts = file[0].split("/")
     # log_message(f"{path_parts}", log_path)
     place = '_'.join(path_parts[-3].split('_')[-2:])
     year = path_parts[-2]
-    bus_df = gpd.read_file(gis_file)
-    bus_routes = bus_df[bus_df.geometry.geom_type.isin(["LineString", "MultiLineString"])]
-    bus_gdf = bus_routes.to_crs(epsg=32652)
-    return bus_gdf, file, year, place
+    bus_df = gpd.read_file(gis_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
+    
+    bus_gdf = bus_df.set_crs(epsg=4326)
+    bus_gdf = bus_gdf.to_crs(epsg=32652)
+
+    rail_df = gpd.read_file(rail_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
+    rail_gdf = rail_df.set_crs(epsg=4326)
+    rail_gdf = rail_gdf.to_crs(epsg=32652)
+    # log_message(f"{bus_gdf.head()}", log_path)
+    return bus_gdf, rail_gdf, file, year, place
 
 #2つの関連のないファイルを受け取ったとき
 def division_2file(files):
@@ -39,9 +48,11 @@ def division_2file(files):
     # log_message(f"{path_parts}", log_path)
     place = '_'.join(path_parts[-3].split('_')[-2:])
     year = path_parts[-2]
-    bus_df = gpd.read_file(gis_file)
-    bus_routes = bus_df[bus_df.geometry.geom_type.isin(["LineString", "MultiLineString"])]
-    bus_gdf = bus_routes.to_crs(epsg=32652)
+    bus_df = gpd.read_file(gis_file, config_options={"SHAPE_RESTORE_SHX": "YES"})
+    # bus_routes = bus_df[bus_df.geometry.geom_type.isin(["LineString", "MultiLineString"])]
+    # bus_stops = bus_df[bus_df.geometry.geom_type == "Point"]
+    bus_gdf = bus_df.set_crs(epsg=4326)
+    bus_gdf = bus_gdf.to_crs(epsg=32652)
     gps_file = pd.read_csv(file, parse_dates=['datetime'], compression="gzip")
     gps_df = gps_file.assign(rail_frag = np.where(gps_file["train_rate"] == 1.0, 1, 0),
                             bus_frag = np.where(gps_file["bus_rate"] == 1.0, 1, 0))
@@ -64,6 +75,13 @@ def train_from_OSM(target_place):
     train_gdf = edges.to_crs(epsg=32652)
     return train_gdf
 
+def station_from_OSM(target_place):
+    tags_station = {"railway": "station"}
+    stations = ox.features_from_place(target_place, tags_station)
+    stations_points = stations[stations.geometry.type == "Point"]
+    stations_points_gdf = gpd.GeoDataFrame(stations_points, crs="EPSG:4326")
+    return stations_points_gdf
+
 #バッファーを作成
 def make_buffer(gdf, buffer_distance):
     # log_message(f"{buffer_distance}", log_path)
@@ -85,14 +103,18 @@ def is_in_buffer_series(points_gdf, buffer_geom):
     return points_gdf.geometry.apply(buffer_geom.covers)
 
 def file_to_gdf(file):
-    month = file.split('/')[-1].split('_')[0]
+    month = "_".join(file.split('/')[-1].split('_')[:2])
+    # month = file.split('/')[-1].split('_')[0]
+
     df = pd.read_csv(file, parse_dates=['datetime'], compression="gzip")\
                     .assign(
                         segment_month_id = lambda x: month + "_" + x['segment_id'].astype(str)
                     )
-    # log_message(f"{segment_df["label"].value_counts()}", log_path)
-    segment_df = df.query("label == 'non-walk'")
-    walk_df = df.query("label == 'walk'")
+    # log_message(f"{df["label"].value_counts()}", log_path)
+    # segment_df = df.query("label == 'non-walk'")
+    # walk_df = df.query("label == 'walk'")
+    segment_df = df.query("is_walk == 0")
+    walk_df = df.query("is_walk == 1")
     # log_message(f"{len(walk_df)} walk GPS", log_path)
     # log_message(f"{segment_df["longitude_anonymous"].min()} {segment_df["longitude_anonymous"].max()} {segment_df["latitude_anonymous"].min()} {segment_df["latitude_anonymous"].max()}", log_path)
     segment_gdf = gpd.GeoDataFrame(segment_df, 
@@ -108,6 +130,8 @@ def file_to_gdf(file):
     walk_gdf = walk_gdf.to_crs(epsg=32652)
     segment_gdf = segment_gdf.to_crs(epsg=32652)
     # log_message(f"{len(walk_gdf)} walk GPS", log_path)
+    # log_message(f"{len(segment_gdf)} segment GPS", log_path)
+
     return segment_gdf, walk_gdf, month
 
 
@@ -147,33 +171,55 @@ def make_features(gdf, *, threshold_train=1.0, threshold_bus=1.0):
                         speed_mps = lambda x: x['dist_from_prev'] / x['time_diff'],
                         acceleration_mps2 = lambda x: x.groupby(group_cols)["speed_mps"].diff() / x['time_diff'],
                     )
-    gdf_enriched = gdf_enriched.assign(
-        bearing = lambda x: x.apply(
-            lambda row: calculate_bearing(
-                row["lat_prev"],
-                row["lon_prev"],
-                row["latitude"],
-                row["longitude"],
-            ),
-        axis=1,
-        ))
+    gdf_bcr = gdf_enriched.assign(
+            bearing = lambda x: x.apply(
+                lambda row: calculate_bearing(
+                    row["lat_prev"],
+                    row["lon_prev"],
+                    row["latitude"],
+                    row["longitude"],
+                ),
+                axis=1
+            )
+        )
     # 0秒区間は速度・加速度をNaNに
     gdf_enriched.loc[gdf_enriched["time_diff"] == 0, ["speed", "speed_mps", "acceleration_mps2"]] = np.nan
 
     # bearing change rate は別途グループ単位で算出
-    bcr = ( 
-        gdf_enriched.sort_values('datetime')\
-                    .groupby(group_cols)\
-                    .apply(lambda df: bearing_change_rate_vectorized( df['bearing'].dropna(), df.loc[df['bearing'].notna(), 'datetime'] ))\
-                    .reset_index(name='bearing_change_rate') 
-            )
+    bcr = (
+            gdf_bcr
+            .groupby(group_cols, group_keys=False)
+            .apply(_segment_mbcr)
+            .reset_index(name='bcr')
+        )
+     # ===== stop rate（有効区間に対する割合）=====
+    # 論文定義: 区間速度 <= 0.6 m/s の区間数 / (n-1)
+    stop_df = (
+        gdf_enriched
+        .groupby(group_cols)
+        .agg(
+            valid_intervals=('speed_mps', lambda s: s.notna().sum()),
+            n_stops=('speed_mps', lambda s: np.sum(s <= 0.6)),
+        )
+        .assign(
+            stop_rate=lambda x: np.where(x['valid_intervals'] > 0,
+                                         x['n_stops'] / x['valid_intervals'],
+                                         np.nan)
+        )
+        .drop(columns=['valid_intervals', 'n_stops'])
+        .reset_index()
+    )
 
     gdf_features = gdf_enriched.groupby(group_cols)\
                         .agg(
-                            label           = ('label', 'first'),
+                            # label           = ('label', 'first'),
+                            is_walk         = ('is_walk', 'first'),
+                            move_id         = ('move_id', 'first'),
                             n_points        = ('datetime', 'count'),
                             all_distance    = ('dist_from_prev', 'sum'),
                             all_time        = ('time_diff', 'sum'),
+                            date           = ('datetime', 'min'),
+                            date_max           = ('datetime', 'max'),
                             mean_speed  = ('speed_mps', 'mean'),
                             max_speed   = ('speed_mps', 'max'),
                             min_speed   = ('speed_mps', 'min'),
@@ -184,7 +230,9 @@ def make_features(gdf, *, threshold_train=1.0, threshold_bus=1.0):
                         )\
                         .reset_index()\
                         .merge(bcr, on=group_cols, how='left')\
+                        .merge(stop_df, on=group_cols, how='left')\
                         .assign(
+                            bearing_change_rate = lambda x: x['bcr']/x["all_time"],
                             buffer_train = lambda x: (x['train_in_buffer'] / x['n_points']).fillna(0),
                             buffer_bus = lambda x: (x['bus_in_buffer'] / x['n_points']).fillna(0),
                             rail_flag = lambda x: x['buffer_train'].fillna(0).ge(threshold_train).astype('int8'),
@@ -211,16 +259,6 @@ def make_features_walk(gdf):
                         speed_mps = lambda x: x['dist_from_prev'] / x['time_diff'],
                         acceleration_mps2 = lambda x: x.groupby(group_cols)["speed_mps"].diff() / x['time_diff'],
                     )
-    gdf_enriched = gdf_enriched.assign(
-        bearing = lambda x: x.apply(
-            lambda row: calculate_bearing(
-                row["lat_prev"],
-                row["lon_prev"],
-                row["latitude"],
-                row["longitude"],
-            ),
-        axis=1,
-        ))
     # 0秒区間は速度・加速度をNaNに
     gdf_enriched.loc[gdf_enriched["time_diff"] == 0, ["speed", "speed_mps", "acceleration_mps2"]] = np.nan
 
@@ -238,8 +276,12 @@ def make_features_walk(gdf):
 
     gdf_features = gdf_enriched.groupby(group_cols)\
                         .agg(
-                            label           = ('label', 'first'),
+                            # label           = ('label', 'first'),
+                            is_walk         = ('is_walk', 'first'),
+                            move_id         = ('move_id', 'first'),
                             n_points        = ('datetime', 'count'),
+                            date           = ('datetime', 'min'),
+                            date_max           = ('datetime', 'max'),
                             all_distance    = ('dist_from_prev', 'sum'),
                             all_time        = ('time_diff', 'sum'),
                             mean_speed  = ('speed_mps', 'mean'),
@@ -251,7 +293,7 @@ def make_features_walk(gdf):
                         .reset_index()\
                         .assign(
                             bearing_change_rate = "NaN",
-                            
+                            stop_rate = "NaN",
                             buffer_train = "NaN",
                             buffer_bus = "NaN",
                             rail_flag = "NaN",
@@ -259,16 +301,16 @@ def make_features_walk(gdf):
                         )
     return gdf_features
 
-def calculate_bearing(lat1, lon1, lat2, lon2):
-    """
-    2点間の方位角（度）を計算
-    """
-    # lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
-    dlon = lon2 - lon1
-    x = np.sin(dlon) * np.cos(lat2)
-    y = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(dlon)
-    theta = np.arctan2(x, y)
-    return (np.degrees(theta) + 360) % 360  # 0〜360に正規化
+# def calculate_bearing(lat1, lon1, lat2, lon2):
+#     """
+#     2点間の方位角（度）を計算
+#     """
+#     # lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
+#     dlon = lon2 - lon1
+#     x = np.sin(dlon) * np.cos(lat2)
+#     y = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(dlon)
+#     theta = np.arctan2(x, y)
+#     return (np.degrees(theta) + 360) % 360  # 0〜360に正規化
 
 
 def bearing_change_rate_vectorized(bearings, times):
@@ -356,26 +398,34 @@ def _geod_distance_m(
     _, _, dist_m = WGS84.inv(lon1, lat1, lon2, lat2)
     return dist_m
 
+def calculate_bearing(lat1, lon1, lat2, lon2):
+    """
+    2点間の方位角（bearing）を計算する
+    緯度・経度はラジアン単位で入力
+    """
+    dlon = lon2 - lon1
+    x = np.sin(dlon) * np.cos(lat2)
+    y = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(dlon)
+    bearing = np.arctan2(x, y)
+    bearing_deg = np.degrees(bearing)
+    return (bearing_deg + 360) % 360  # 0–360°に正規化
 
-def _circ_diff_deg(arr):
-    # 最短角差 (-180, 180] に折りたたみ
-    d = np.diff(arr.astype(float))
-    return (d + 180.0) % 360.0 - 180.0
+def _segment_mbcr(df):
+    # 時系列順に
+    bearings = df.sort_values('datetime')["bearing"].to_numpy()
 
-def bearing_change_rate_vectorized_safe(bearing, dt):
-    # bearing: 1D array-like [deg], dt: 1D array-like (datetime-like)
-    b = np.asarray(bearing, dtype=float)
-    if b.size < 2:
+    # NaN除去（先頭はNaNになりがち）
+    bearings = bearings[~np.isnan(bearings)]
+    n_points = len(df) -1  # 「ポイント数」で割る（ご指定どおり）
+
+    # 有効なbearingが2未満 or ポイント数0 の場合は NaN
+    if n_points == 0 or len(bearings) < 2:
         return np.nan
 
-    t = pd.to_datetime(dt).view('int64') / 1e9  # 秒
-    dt_sec = np.diff(t)
-    dtheta = np.abs(_circ_diff_deg(b))
+    # 隣接差の絶対値（度）
+    diffs = np.abs(np.diff(bearings))
+    # 最小角度差に正規化（>180 は 360-差）
+    diffs = np.where(diffs > 180.0, 360.0 - diffs, diffs)
 
-    # 有効なペア（Δt > 0）だけ使う
-    valid = dt_sec > 0
-    if not np.any(valid):
-        return np.nan
-
-    # 変化率 = (角度差の合計) / (時間の合計)
-    return dtheta[valid].sum() / dt_sec[valid].sum()
+    # 合計をポイント数で割る
+    return float(diffs.sum())

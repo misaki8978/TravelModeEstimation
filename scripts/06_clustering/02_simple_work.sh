@@ -4,16 +4,16 @@
 #$ -cwd
 #$ -V
 #$ -N clustering
-#$ -q all.q@Claudette
+#$ -q all.q@Cheryl
 #$ -pe smp 8
-#$ -o logs/clustering.out
-#$ -e logs/clustering.err
+#$ -o logs/06_clustering/clustering.out
+#$ -e logs/06_clustering/clustering.err
 
-PLACE="09_nagasaki"
+PLACE="07_osaka"
 YEAR="2019"
 
-INPUT_DIR="$DATA_DIR/processed/09_04_${PLACE}/${YEAR}_weekly"
-# FILTERED_DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
+# INPUT_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly"
+INPUT_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly"
 INPUT_FILES=(${INPUT_DIR}/*nonwalk.csv.gz)
 
 python3 /home/fukui/workspace/TravelModeEstimation/scripts/06_clustering/02_clustering.py "${INPUT_FILES[@]}"

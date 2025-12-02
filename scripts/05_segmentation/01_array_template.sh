@@ -4,11 +4,11 @@
 #$ -cwd
 #$ -V
 #$ -N gps_segmentation
-#$ -q all.q@Claudette
+#$ -q all.q@Cheryl
 #$ -pe smp 8
 #$ -t 1-__NUM__
-#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
-#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
+#$ -o logs/05_segment/__PLACE_YEAR__/$TASK_ID.out
+#$ -e logs/05_segment/__PLACE_YEAR__/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
 

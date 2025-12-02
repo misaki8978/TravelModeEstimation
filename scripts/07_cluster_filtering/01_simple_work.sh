@@ -4,18 +4,19 @@
 #$ -cwd
 #$ -V
 #$ -N cluster_filtering
-#$ -q all.q@Claudette
+#$ -q all.q@Dwight
 #$ -pe smp 1
-#$ -o logs/cluster_filtering.out
-#$ -e logs/cluster_filtering.err
+#$ -o logs/07_cluster_filtering/cluster_filtering.out
+#$ -e logs/07_cluster_filtering/cluster_filtering.err
 
 PLACE="09_nagasaki"
 YEAR="2019"
 
 FILTER_DIR="$DATA_DIR/processed/06_02_${PLACE}/${YEAR}_weekly"
-FILTER_FILES=(${FILTER_DIR}/*cluster.csv.gz)
+FILTER_FILES=(${FILTER_DIR}/*gis_cluster.csv.gz)
 
 FILTERED_DIR="$DATA_DIR/processed/09_04_${PLACE}/${YEAR}_weekly"
 FILTERED_FILES=(${FILTERED_DIR}/*isin.csv.gz)
 
-python3 /home/fukui/workspace/TravelModeEstimation/scripts/07_cluster_filtering/01_filtering.py "${FILTER_FILES[@]}" -- "${FILTERED_FILES[@]}"
+# python3 /home/fukui/workspace/TravelModeEstimation/scripts/07_cluster_filtering/01_filtering.py "${FILTER_FILES[@]}" -- "${FILTERED_FILES[@]}"
+python3 /home/fukui/workspace/TravelModeEstimation/scripts/07_cluster_filtering/01_filtering.py "${FILTERED_FILES[@]}" -- "${FILTER_FILES[@]}"

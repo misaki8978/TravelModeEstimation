@@ -2,22 +2,22 @@
 #$ -S /bin/bash
 #$ -V
 #$ -N gps_segmentation
-#$ -q all.q@Claudette
+#$ -q all.q@Cheryl
 
 # 01_build_and_submit.sh
 
-rm logs/log_05_segmentation.txt
+
 
 cd $HOME/workspace/TravelModeEstimation
 
-place_year="09_nagasaki_2019"  #ここを変更！
+place_year="07_osaka_2019"  #ここを変更！
 echo "place_year=${place_year}" >&2
 
 PLACE_YEAR=${place_year} bash ./scripts/05_segmentation/01_make_chunks.sh >&2
 
-
-mkdir -p logs/${place_year}
-rm -rf logs/${place_year}/*
+rm logs/05_segment/${place_year}.txt
+mkdir -p "./logs/05_segment/${PLACE_YEAR}"
+rm -rf "./logs/05_segment/${PLACE_YEAR}/*"
 
 CHUNK_DIR="$DATA_DIR/interim/chunks/${place_year}_segment"
 

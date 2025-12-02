@@ -2,22 +2,22 @@
 #$ -S /bin/bash
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@Claudette
-#$ -tc 5
+#$ -q all.q@Dwight
+#$ -tc 3
 # 01_build_and_submit.sh
-
-rm logs/log_04_stay_replay.txt
+place_year="07_osaka_2019"  #ここを変更！
+echo "place_year=${place_year}" >&2
+# rm logs/${place_year}/log_04_stay_multithread.txt
 
 cd $HOME/workspace/TravelModeEstimation
 
-place_year="09_nagasaki_2019"  #ここを変更！
-echo "place_year=${place_year}" >&2
+
 
 PLACE_YEAR=${place_year} bash ./scripts/04_stay/01_make_chunks.sh >&2
 
+mkdir -p logs/04_stay/${place_year}
+rm -rf logs/04_stay/${place_year}/*
 
-mkdir -p logs/04_stay_replay
-rm -rf logs/04_stay_replay/*
 
 CHUNK_DIR="$DATA_DIR/interim/chunks/${place_year}_gps"
 

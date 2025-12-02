@@ -9,7 +9,7 @@ import numpy as np
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
 from clustering_func import cluster_analysis
-from segment_analysis_func import mode_change, plot_ratio_by_user
+from segment_analysis_func import mode_change, plot_ratio_by_user, plot_mode_analysis, segment_mode
 from segment_analysis_func import plot_velocity_distribution_mode_bw, plot_multi_band_with_reference
 
 
@@ -17,47 +17,71 @@ warnings.filterwarnings('ignore')
 
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_01_gis_cluster.txt"
 
-files = sys.argv[1]
+files = sys.argv[1:]
 
-YEAR = files.split("/")[-2]
-PLACE = files.split("/")[-3].split("_")[-2:]
+YEAR = files[0].split("/")[-2]
+PLACE = files[0].split("/")[-3].split("_")[-2:]
 PLACE = "_".join(PLACE)
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/06_gis_frag/{PLACE}/{YEAR}"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-df_segment = pd.read_csv(files, compression="gzip")
-
-log_message(f"{df_segment.columns}", message_path)
-
 #結果を見て適宜変更
-cluster_col = {
+
+walk_cluster_col = {
+   "-1": "walk"
+}
+train_cluster_col = {
    "-1": "walk", 
-   "0": "train", 
-   "1": "bike", 
-   "2": "car", 
-   "3": "bus"
+   "0": "bus", 
+   "1": "car", 
+   "2": "train", 
+   "3": "bicycle",
+   "4": "bike"
+   }
+bus_cluster_col = {
+   "-1": "walk", 
+   "0": "bus", 
+   "1": "car", 
+   "2": "bicycle",
+   "3": "bike"
+   }
+other_cluster_col = {
+   "-1": "walk", 
+   "0": "bicycle", 
+   "1": "car",
+   "2": "bike"
    }
 mode_color = {
    "walk": "skyblue",
    "car": "red",
    "bus": "yellowgreen",
-   "bike": "purple",
-   "train": "#ffa500"
+   "bicycle": "purple",
+   "train": "#ffa500",
+   "bike": "green"
 }
 
 mode_marker = {
    "walk": "D",       # 丸
    "car": "s",        # 四角
    "bus": "^",        # ダイヤ
-   "bike": "x",       # 三角
-   "train": "o"       # ×印
+   "bicycle": "x",       # 三角
+   "train": "o",       # ×印,
+   "bike": "v"     # 三角
 }
+df_list = []
+for file in files:
+    with gzip.open(file, 'rt') as f:
+        gis = file.split("/")[-1].split("_")[0]
+        df_segment = pd.read_csv(f, compression="gzip")
+        df_segment = mode_change(df_segment, eval(f"{gis}_cluster_col"), gis)
+        log_message(f"{gis}:{len(df_segment)}", message_path)
+        log_message(f"{gis}:{df_segment['mode_label'].value_counts()}", message_path)
+        df_list.append(df_segment)
+df_segment = pd.concat(df_list)
+plot_mode_analysis(df_segment, OUT_DIR, mode_color)
 
-df_segment = mode_change(df_segment, cluster_col)
-log_message(f"{df_segment.columns}", message_path)
-log_message(f"{df_segment['mode_label'].value_counts()}", message_path)
-# mode_analysis(df_segment, OUT_DIR, mode_color)
-plot_ratio_by_user(df_segment, OUT_DIR)
+
+# plot_ratio_by_user(df_segment, OUT_DIR)
 
 plot_velocity_distribution_mode_bw(df_segment, OUT_DIR, mode_marker)
 df_segment["segment_key"] = df_segment["hashed_adid"].astype(str) + "_" + df_segment["segment_month_id"].astype(str)
@@ -71,7 +95,7 @@ cluster_df = df_segment.groupby("mode_label")\
                      )\
                      .reset_index()
 
-log_message(f"{cluster_df.head()}", message_path)
+# log_message(f"{cluster_df.head()}", message_path)
 
 # ---- 使い方（縦に４本：PT参照＋3本） ----
 plot_multi_band_with_reference(
@@ -80,7 +104,7 @@ plot_multi_band_with_reference(
     titles=["Segment Count", "All Time", "All Distance"],
     color_map=mode_color,
     ref_title="地方都市",
-    ref_mode_share_ja={"バス":1.3, "鉄道":2.2, "自転車":8.1, "徒歩・その他":12.7, "車":75.7},
+    ref_mode_share_ja={"バス":2.2, "鉄道":24.4, "自転車":15.5, "徒歩・その他":25.9, "車":31.9},
     savepath=os.path.join(OUT_DIR, "multi_band_with_PT.png"),
     figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
 )
@@ -97,3 +121,50 @@ log_message("done", message_path)
 #     savepath=os.path.join(OUT_DIR, "segment_count_with_PT.png"),
 #     figsize=(10, 4.5),  # 文字が詰まる場合は高さを調整
 # )
+
+df_move, df_mode_represent = segment_mode(df_segment)
+log_message(f"{df_mode_represent.head()}", message_path)
+log_message(f"{df_mode_represent['mode_represent'].value_counts()}", message_path)
+log_message(f"{df_mode_represent["is_holiday"].value_counts()}", message_path)
+log_message(f"{df_mode_represent.query("is_holiday == True")["mode_represent"].value_counts()}", message_path)
+log_message(f"{df_mode_represent.query("is_holiday == False")["mode_represent"].value_counts()}", message_path)
+log_message(f"{df_move["n_segments"].mean()}", message_path)
+log_message(f"holiday mean: {df_move.query("is_holiday == True")["n_segments"].mean()}", message_path)
+log_message(f"weekday mean: {df_move.query("is_holiday == False")["n_segments"].mean()}", message_path)
+
+
+holiday_df = df_mode_represent.query("is_holiday == True")["mode_represent"].value_counts()
+non_holiday_df = df_mode_represent.query("is_holiday == False")["mode_represent"].value_counts()
+
+holiday_rate = holiday_df / len(df_mode_represent.query("is_holiday == True"))
+# log_message(f"{holiday_rate}", message_path)
+
+non_holiday_rate = non_holiday_df / len(df_mode_represent.query("is_holiday == False"))
+# log_message(f"{non_holiday_rate}", message_path)
+
+holiday_rate_by_mode = pd.DataFrame({"mode_label": holiday_rate.index, "holidayrate": holiday_rate.values, "non-holidayrate": non_holiday_rate.values})
+log_message(f"{holiday_rate_by_mode}", message_path)
+
+plot_multi_band_with_reference(
+    holiday_rate_by_mode,
+    value_cols=["non-holidayrate"],
+    titles=["本研究"],
+    color_map=mode_color,
+    ref_title="パーソントリップ",
+    ref_mode_share_ja={"バス":3.1, "鉄道":4.3, "自転車":16.1, "徒歩・その他":17.8, "車":58.6},
+    savepath=os.path.join(OUT_DIR, "multi_band_non_holiday_rate_by_mode.png"),
+    figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
+)
+
+plot_multi_band_with_reference(
+    holiday_rate_by_mode,
+    value_cols=["holidayrate"],
+    titles=["本研究"],
+    color_map=mode_color,
+    ref_title="パーソントリップ",
+    ref_mode_share_ja={"バス":1.7, "鉄道":2.6, "自転車":11.1, "徒歩・その他":12.5, "車":72.1},
+    savepath=os.path.join(OUT_DIR, "multi_band_holiday_rate_by_mode.png"),
+    figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
+)
+
+log_message("done", message_path)

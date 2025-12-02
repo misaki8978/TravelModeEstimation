@@ -6,15 +6,15 @@
 #$ -N gps_weekly
 #$ -q all.q@Dwight
 #$ -pe smp 8
-#$ -tc 5
-#$ -t 1-66
-#$ -o logs/07_osaka_2019b/$TASK_ID.out
-#$ -e logs/07_osaka_2019b/$TASK_ID.err
+#$ -tc 3
+#$ -t 1-56
+#$ -o logs/07_osaka_2022b/$TASK_ID.out
+#$ -e logs/07_osaka_2022b/$TASK_ID.err
 
 
-echo "Using place_year: 07_osaka_2019b" >&1
+echo "Using place_year: 07_osaka_2022b" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/07_osaka_2019b"
+CHUNK_DIR="$DATA_DIR/interim/chunks/07_osaka_2022b"
 
 echo "CHUNK: $CHUNK_DIR"
 

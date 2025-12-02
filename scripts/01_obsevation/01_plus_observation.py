@@ -26,9 +26,9 @@ place = path_parts[-2]
 
 year_only = year.split("_")[0]
 
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_plus/{place}/{year}"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_plus/{place}"
 os.makedirs(OUT_DIR, exist_ok=True)
-
+# log_message(f"{len(files)}", message_path)
 
 weekly_records = []
 for file in files:
@@ -44,6 +44,8 @@ for file in files:
 df = pd.concat(weekly_records, ignore_index=True)\
         .groupby(by=['hashed_adid'], as_index=False)\
         .agg({'count': 'sum'})
+log_message(f"{place}_{year}: {len(df)}", message_path)
+log_message(f"{place}_{year}: {df['count'].sum()}", message_path)
 
 #補累積分布関数
 def ccdf(df: pd.DataFrame) -> np.ndarray:

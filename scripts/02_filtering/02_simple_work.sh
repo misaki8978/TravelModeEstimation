@@ -9,7 +9,7 @@
 #$ -o logs/simple_work.out
 #$ -e logs/simple_work.err
 
-PLACE="09_nagasaki"
+PLACE="03_tokyo"
 YEAR="2019"
 
 FILTERED_DIR="$DATA_DIR/interim/filtered/${PLACE}/${YEAR}_weekly/user_counts_4500/bulk/"

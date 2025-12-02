@@ -5,11 +5,11 @@
 #$ -V
 #$ -N time_diff
 #$ -q all.q@Dwight
-#$ -pe smp 1
+#$ -pe smp 8
 #$ -o logs/time_diff.out
 #$ -e logs/time_diff.err
 
-PLACE="09_nagasaki"
+PLACE="03_tokyo"
 YEAR="2019"
 
 FILTERED_DIR="$DATA_DIR/interim/filtered/${PLACE}/${YEAR}_weekly/user_counts_4500/sorted"

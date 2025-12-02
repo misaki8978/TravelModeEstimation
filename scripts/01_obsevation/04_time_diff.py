@@ -21,10 +21,9 @@ files = sys.argv[1:]  # 引数でファイルリストを受け取る
 _path = os.path.dirname(files[0])
 path_parts = _path.split("/")
 # 最後の2つの要素を取得
-year = path_parts[-4]
-place_ = path_parts[-5]
-place = "_".join(place_.split("_")[2:])
-OUT_DIR = f"/home/data/fukui/outputs/figures/{place}/{year}"
+year = path_parts[-3].split("_")[-2]
+place = path_parts[-4]
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{place}/{year}/04_time_diff"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 weekly_records = []
@@ -33,7 +32,7 @@ for file in files:
         with gzip.open(file, 'rt') as f:
             df = pd.read_csv(f, parse_dates=["datetime"])
             # log_message(f"{(df.shape[0])}", message_path)
-            weekly_records.append(df)
+            weekly_records.append(df[['hashed_adid', 'datetime']])
             f.close()
     except FileNotFoundError:
         log_message(f"ファイル {file} が見つかりませんでした。", message_path)
@@ -41,9 +40,10 @@ for file in files:
 df = pd.concat(weekly_records, ignore_index=True)
 # log_message(f"df.columns: {df.columns}", message_path)
 # 全ユーザーの時間間隔を計算
-df = df.sort_values(['hashed_adid', 'datetime'])\
+df = df.groupby("hashed_adid", group_keys=False)\
+        .apply(lambda x: x.sort_values("datetime"))\
         .assign(
-            time_diff_sec=lambda x: x.groupby('hashed_adid')['datetime'].diff().dt.total_seconds()
+            time_diff_sec=lambda x: x['datetime'].diff().dt.total_seconds()
         )
 all_time_diffs = df['time_diff_sec'].dropna()\
                                     .value_counts()\

@@ -7,6 +7,7 @@ import skfuzzy as fuzz
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
+import os
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
@@ -19,13 +20,27 @@ from log_message import log_message
 
 message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_06_clustering.txt"
 
-def clustering(df_clean, feature_cols, gis):
+def data_sepa(df, buffer):
+    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
+    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
+    # df_train = df.query(f"label == 'non-walk' & buffer_train >= {buffer}")
+    # df_bus = df.query(f"label == 'non-walk' & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    # df_other = df.query(f"label == 'non-walk' & buffer_train < {buffer} & buffer_bus < {buffer}")
+    return df_train, df_bus, df_other
+
+def start_clustering(df, gis_feature_cols, feature_cols, n_clusters, OUT_DIR):
+    df_normal = fuzzy_clustering(df, feature_cols, OUT_DIR, "normal", n_clusters)
+    df_clean = fuzzy_clustering(df_normal, gis_feature_cols, OUT_DIR, "gis", n_clusters)
+    return df_normal, df_clean
+
+def clustering(df_clean, feature_cols, gis, n_clusters):
 
 
     # スケーリング
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df_clean[feature_cols])
-    kmeans = KMeans(n_clusters=4, random_state=21)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=21)
     clusters = kmeans.fit_predict(X_scaled)
 
     # 結果をデータフレームに追加
@@ -102,7 +117,7 @@ def fuzzy_silhouette_score(X, cntr, u, m=1.5):
     return overall_score, s
 
 
-def fuzzy_clustering(df_clean, cols, OUT_DIR, gis):
+def fuzzy_clustering(df_clean, cols, OUT_DIR, gis, n_clusters):
     if gis == "normal":
         # 無限大やNaNの処理
         df_all = df_clean.copy()
@@ -113,8 +128,8 @@ def fuzzy_clustering(df_clean, cols, OUT_DIR, gis):
     # df_target = df_target[df_target["bearing_change_rate"] != 0]
     # log_message(f"{df_all['label'].value_counts()}", message_path)
 
-    # target_mask = df_target["label"] == "non-walk"
-    df_target = df_all.query("label == 'non-walk'")
+    # df_target = df_all.query("label == 'non-walk'")
+    df_target = df_all.query("is_walk == 0")
     # log_message(f"{len(df_target)}", message_path)
 
     # スケーリング
@@ -130,9 +145,8 @@ def fuzzy_clustering(df_clean, cols, OUT_DIR, gis):
     X_scaled_T = df_target[scaled_cols].values.T
 
     # Fuzzy c-means
-    n_clusters = 4
     cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(
-        X_scaled_T, c=n_clusters, m=1.5, error=0.005, maxiter=1000, init=None, seed=0
+        X_scaled_T, c=n_clusters, m=2.0, error=0.005, maxiter=1000, init=None, seed=20
     )
 
     # シルエットスコア
@@ -179,14 +193,18 @@ def rgba_color(hex_color, alpha):
 
 # 最大所属度のヒストグラム
 def Maximum_Membership_Degrees(df, OUT_DIR, gis):
-    df_clean = df.query("label == 'non-walk'")
+    gis_name = gis.split("_")[0]
+    mode_name = gis.split("_")[1]
+    os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
+    # df_clean = df.query("is_walk == 0")
+    df_clean = df.query("is_walk == 0")
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.hist(df_clean[f"max_membership_{gis}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
+    ax.hist(df_clean[f"max_membership_{gis_name}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
     ax.set_title(f"{gis} Distribution of Maximum Membership Degrees")
     ax.set_xlabel("Maximum Membership Degree")
     ax.set_ylabel("Number of Samples")
     ax.grid(True, linestyle="--", alpha=0.5)
-    fig.savefig(f'{OUT_DIR}/{gis}_max_membership_histogram.png')
+    fig.savefig(f'{OUT_DIR}/{mode_name}/{gis_name}_max_membership_histogram.png')
 
 
 def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
@@ -294,19 +312,22 @@ def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
 
 def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
     # 特徴量数に応じて行数を自動調整（列数は4固定）
-    df_clean = df.query("label == 'non-walk'")
+    # df_clean = df.query("is_walk == 0")
+    df_clean = df.query("is_walk == 0")
     n_features = len(feature_cols)
     ncols = 4
     nrows = int(np.ceil(n_features / ncols)) if n_features > 0 else 1
-
+    gis_name = gis.split("_")[0]
+    mode_name = gis.split("_")[1]
+    os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
     fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
     axes = np.atleast_1d(axes).ravel()
 
     for i, col in enumerate(feature_cols):
         ax = axes[i]
-        sns.boxplot(ax=ax, x=df_clean[f'fuzzy_cluster_{gis}'] + 1, y=col, data=df_clean)
+        sns.boxplot(ax=ax, x=df_clean[f'fuzzy_cluster_{gis_name}'] + 1, y=col, data=df_clean)
         ax.set_title(col)
-        if col == "all_distance":
+        if col == "all_distance" or col == "all_time":
             ax.set_yscale("log")
 
     # 余ったAxesを非表示（または削除）
@@ -314,7 +335,7 @@ def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
         fig.delaxes(axes[j])
 
     fig.tight_layout()
-    fig.savefig(f'{OUT_DIR}/cluster_fuzzy_boxplot_{gis}.png')
+    fig.savefig(f'{OUT_DIR}/{mode_name}/{gis_name}_cluster_fuzzy_boxplot.png')
 
 
 def feature_cluster_centroids(df, feature_cols):
@@ -374,41 +395,48 @@ def cluster_pairplot(df, feature_cols, OUT_DIR, gis):
     plt.savefig(f'{OUT_DIR}/cluster_pairplot.png')
 
 
-def map_plot(df, OUT_DIR, gdf_pref, bus_gdf, train_gdf, gis):
-    fig, axes = plt.subplots(figsize=(10, 10) , nrows=2, ncols=2)
+def map_plot(df, OUT_DIR, gdf_pref, bus_gdf, train_gdf, gis, gis_name):
+    mode_label = df[f'mode_label'].unique().tolist()
+    n_rows = int(np.ceil(len(mode_label) / 2))
+    n_cols = 2
+    fig, axes = plt.subplots(figsize=(10, 10), nrows=n_rows, ncols=n_cols, squeeze=False)
     nagasaki_gdf_pref = gdf_pref.query("prefecture == '長崎県'", engine='python')
-    for i in range(4):
-        df_cluster = df[df[f'fuzzy_cluster_{gis}'] == i]
-        ax = axes[i//2, i%2]
+    for i, mode in enumerate(mode_label):
+        df_cluster = df[df[f'mode_label'] == mode]
+        # log_message(f"{len(df_cluster)}points", message_path)
+        # log_message(f"{mode} {i}", message_path)
         nagasaki_gdf_pref.plot(
             ax=axes[i//2, i%2], 
             color='0.8', 
             # edgecolor='0.5',
             # linewidth=3
             )
-        # bus_gdf.plot(
-        #     ax=axes[i//2, i%2], 
-        #     color='skyblue', 
-        #     linewidth=1.1, 
-        #     label='Bus Routes'
-        #     )
-        # train_gdf.plot(
-        #     ax=axes[i//2, i%2], 
-        #     color='pink', 
-        #     linewidth=1.1, 
-        #     label='Rail Routes'
-        #     )
+        if mode == "train":
+            train_gdf.plot(
+                ax=axes[i//2, i%2], 
+                color='pink', 
+                linewidth=1.1, 
+                label='Rail Routes'
+                )
+        if mode == "bus":
+            bus_gdf.plot(
+                ax=axes[i//2, i%2], 
+                color='skyblue', 
+                linewidth=1.1, 
+                label='Bus Routes'
+                )
         df_cluster.plot(
             ax=axes[i//2, i%2], 
             color='0.0', 
             markersize=0.5, 
             alpha=0.1
             )
-        axes[i//2, i%2].set_title(f'Cluster {i+1}  {gis} ver.')
+        
+        axes[i//2, i%2].set_title(f'{mode} ver.')
         axes[i//2, i%2].set_axis_off()
         axes[i//2, i%2].set_xlim(540000, 640000)
         axes[i//2, i%2].set_ylim(3600000, 3700000)
-        fig.savefig(f'{OUT_DIR}/cluster_map_{gis}.png')
+        fig.savefig(f'{OUT_DIR}/cluster_map.png')
     
 
     return df

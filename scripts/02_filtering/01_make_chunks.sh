@@ -18,6 +18,7 @@ rm -rf "$CHUNK_DIR/chunk_*"    # 古いチャンクがあれば削除
 
 # データファイルの一覧を作成
 find "$DIR1" "$DIR2" -maxdepth 1 -name '*.csv.gz' | sort > "$CHUNK_DIR/all_files.lst"
+# find "$DIR2" -maxdepth 1 -name '*.csv.gz' | sort > "$CHUNK_DIR/all_files.lst"
 
 # 一覧を100行ごとに分割
 split -d -a 4 -l "$CHUNK" "$CHUNK_DIR/all_files.lst" "$CHUNK_DIR/chunk_"

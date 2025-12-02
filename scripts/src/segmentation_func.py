@@ -214,8 +214,8 @@ def process_all_segments(df, v_thd, a_thd, dist_thd1, dist_thd2, limit_thd):
                 .sort_values(['move_id', 'datetime'])\
                 .reset_index(drop=True)
     final_df = results[["hashed_adid", "datetime", "move_id", "segment_id", "label", "label_cer",  "P_speed", "speed", "acceleration", "distance_m","distance", "time_diff_s", "latitude_anonymous", "longitude_anonymous", "accuracy"]]
-    final_df = final_df.assign(
-        latitude_anonymous = lambda x: np.degrees(x['latitude_anonymous']),
-        longitude_anonymous = lambda x: np.degrees(x['longitude_anonymous']),
-    )
+    # final_df = final_df.assign(
+    #     latitude_anonymous = lambda x: np.degrees(x['latitude_anonymous']),
+    #     longitude_anonymous = lambda x: np.degrees(x['longitude_anonymous']),
+    # )
     return final_df

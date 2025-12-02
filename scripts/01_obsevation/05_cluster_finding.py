@@ -14,65 +14,99 @@ from log_message import log_message
 from clustering_func import cluster_pairplot, fuzzy_cluster_3Dplot, cluster_boxplot, map_plot
 from file_open import division_two_file
 from gis import train_from_OSM
+from segment_analysis_func import mode_change
 
 warnings.filterwarnings('ignore')
 
-files = sys.argv[1:]  # 引数でファイルリストを受け取る
-gps_file, gis_file = division_two_file(files)
+gps_files = sys.argv[1:-3]  # 引数でファイルリストを受け取る
+# gps_file, gis_file = division_two_file(files)
+gis_file = sys.argv[-2]
+train_file = sys.argv[-1]
 
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_01_05_cluster_finding.txt"
 
+train_cluster_col = {
+   "-1": "walk", 
+   "0": "car", 
+   "1": "bus", 
+   "2": "train", 
+   "3": "bicycle",
+   "4": "bike"
+   }
+bus_cluster_col = {
+   "-1": "walk", 
+   "0": "car", 
+   "1": "bicycle", 
+   "2": "bus",
+   "3": "bike"
+   }
+other_cluster_col = {
+   "-1": "walk", 
+   "0": "car", 
+   "1": "bicycle",
+   "2": "bike"
+   }
 
-YEAR = gps_file.split("/")[-2]
-PLACE = gps_file.split("/")[-3].split("_")[-2:]
-PLACE = "_".join(PLACE)
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/05_cluster_finding/{PLACE}/{YEAR}"
+
+YEAR = gps_files[0].split("/")[-2]
+PLACE = gps_files[0].split("/")[-3]
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/05_cluster_finding/"
 os.makedirs(OUT_DIR, exist_ok=True)
-
-with gzip.open(gps_file, 'rt') as f:
-    df = pd.read_csv(f)
-    f.close()
-log_message(f"df.columns: {df.columns}", message_path)
-feature_cols = [
-        'mean_vel',
-        'max_vel',
-        'min_vel',
-        'mean_acc',
-        'total_distance',
-        'duration_sec',
-        'bearing_rate_rad'
-    ]
-# cluster_pairplot(df, feature_cols, OUT_DIR)
-# df = fuzzy_cluster_3Dplot(df, OUT_DIR)
-# df_07 = df.query("max_membership >= 0.9")
-# log_message(f"df_07.head: {df_07.head()}", message_path)
-# cluster_boxplot(df_07, feature_cols, OUT_DIR)
 
 #都道府県ポリゴン
 pref_poly = [Polygon(points) for points in pref_points(get_data())]
 gdf_pref = gpd.GeoDataFrame(crs = 'EPSG:4326', geometry=pref_poly)
 gdf_pref['prefecture'] = pref_names[1:]
 gdf_pref = gdf_pref.to_crs(epsg=32652)
+gps_list = []
+for gps_file in gps_files:
+    gis_name = gps_file.split("/")[-1].split("_")[0]
+    with gzip.open(gps_file, 'rt') as f:
+        df = pd.read_csv(f)
+        df = mode_change(df, eval(f"{gis_name}_cluster_col"), gis_name)
+        # log_message(f"{len(df)}points", message_path)
+        gps_list.append(df)
+        f.close()
+    
+    # log_message(f"{gis_name}: {df[f'mode_label'].value_counts()}", message_path)
+    # feature_cols = [
+    #         'mean_vel',
+    #         'max_vel',
+    #         'min_vel',
+    #         'mean_acc',
+    #         'total_distance',
+    #         'duration_sec',
+    #         'bearing_rate_rad'
+        # ]
+# cluster_pairplot(df, feature_cols, OUT_DIR)
+# df = fuzzy_cluster_3Dplot(df, OUT_DIR)
+# df_07 = df.query("max_membership >= 0.9")
+# log_message(f"df_07.head: {df_07.head()}", message_path)
+# cluster_boxplot(df_07, feature_cols, OUT_DIR)
 
+gps_df = pd.concat(gps_list)
+# log_message(f"{gps_df['mode_label'].value_counts()}", message_path)
 #GPSデータをGeoDataFrameに変換
 gps_gdf = gpd.GeoDataFrame(
-    df,
-    geometry=gpd.points_from_xy(df["longitude_anonymous"], df["latitude_anonymous"]),
+    gps_df,
+    geometry=gpd.points_from_xy(gps_df["longitude_anonymous"], gps_df["latitude_anonymous"]),
     crs="EPSG:4326",
 )
 gps_gdf = gps_gdf.to_crs(epsg=32652)
 
 #GIS--bus
-bus_df = gpd.read_file(gis_file)
-bus_routes = bus_df[bus_df.geometry.geom_type.isin(["LineString", "MultiLineString"])]
-bus_gdf = bus_routes.to_crs(epsg=32652)
+bus_df = gpd.read_file(gis_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
 
-place_name = "Nagasaki, Japan"
-#GIS--rail
-train_gdf = train_from_OSM(place_name)
+bus_gdf = bus_df.set_crs(epsg=4326)
+bus_gdf = bus_gdf.to_crs(epsg=32652)
 
-map_plot(gps_gdf, OUT_DIR, gdf_pref, bus_gdf, train_gdf, "normal")
-map_plot(gps_gdf, OUT_DIR, gdf_pref, bus_gdf, train_gdf, "gis")
+train_df = gpd.read_file(train_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
+
+train_gdf = train_df.set_crs(epsg=4326)
+train_gdf = train_gdf.to_crs(epsg=32652)
+
+
+map_plot(gps_gdf, OUT_DIR, gdf_pref, bus_gdf, train_gdf, "gis", gis_name)
 
 
 

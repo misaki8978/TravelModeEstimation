@@ -6,7 +6,7 @@
 #$ -N gps_weekly
 #$ -q all.q@Dwight
 #$ -pe smp 8
-#$ -tc 5
+#$ -tc 3
 #$ -t 1-__NUM__
 #$ -o logs/__PLACE_YEAR__/$TASK_ID.out
 #$ -e logs/__PLACE_YEAR__/$TASK_ID.err

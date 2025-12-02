@@ -31,7 +31,7 @@ year = sys.argv[-2]
 # gps_files = args[split_idx + 1:]
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_{place}.txt"
 
-# log_message(f"place: {place}, year: {year}, input_folder: {input_folder}",message_path)
+# log_message(f"place: {place}, year: {year}, input_folder: {input_folder[-1]}",message_path)
 
 
 OUT_DIR = f"/home/data/fukui/interim/filtered/{place}/{year}_weekly/user_counts_4500/bulk/"
@@ -90,14 +90,20 @@ if weekly_records:
         final_result = pd.concat(valid_records, ignore_index=True)
         
         
-        log_message(f"final_result: {len(final_result)}", message_path)
+        # log_message(f"final_result: {len(final_result)}", message_path)
         
         
         chunk_size = 1600000
         #log_message(f"file_number: {file_number}")
         for i in range(0, len(final_result), chunk_size):
             chunk = final_result[i:i + chunk_size]
-            output_file_name = f"{file_number}_raw_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
+            if input_folder[-1] == "b":
+                output_file_name = f"{input_folder[-1]}_{file_number}_raw_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
+            else:
+                output_file_name = f"{file_number}_raw_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
+
             chunk.to_csv(f"{OUT_DIR}{output_file_name}", index=False, compression='gzip')
-            log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {final_result.shape[0]} rows.", message_path)
+        
+        log_message(f"{input_folder[-1]}_{file_number} Saved.", message_path)
+            # log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {final_result.shape[0]} rows.", message_path)
     

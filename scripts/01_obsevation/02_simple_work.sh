@@ -4,12 +4,12 @@
 #$ -cwd
 #$ -V
 #$ -N simple_work
-#$ -q all.q@Claudette
+#$ -q all.q@Dwight
 #$ -pe smp 1
 #$ -o logs/stay_and_move.out
 #$ -e logs/stay_and_move.err
 
-PLACE="09_nagasaki"
+PLACE="07_osaka"
 YEAR="2019"
 
 # FILTERED_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly/"

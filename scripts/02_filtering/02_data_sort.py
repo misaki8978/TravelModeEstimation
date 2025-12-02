@@ -69,13 +69,13 @@ for month, frames in monthly_data.items():
     if not frames:
         continue
     month_df = pd.concat(frames, ignore_index=True)
-    chunk_size = 1600000
+    chunk_size = 5000000
     #log_message(f"file_number: {file_number}")
     for i in range(0, len(month_df), chunk_size):
         chunk = month_df[i:i + chunk_size]
         output_file_name = f"{month}_sorted_{i // chunk_size + 1}.csv.gz"
         chunk.to_csv(f"{OUT_DIR}{output_file_name}", index=False, compression='gzip')
-        log_message(f"Saved {month}_sorted.csv with {len(chunk)} rows / {month_df.shape[0]} rows.")
+        log_message(f"Saved {month}_sorted.csv with {len(chunk)} rows / {month_df.shape[0]} rows.", message_path)
 
 
 

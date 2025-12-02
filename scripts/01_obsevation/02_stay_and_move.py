@@ -25,9 +25,9 @@ path_parts = _path.split("/")
 # place_ = path_parts[-2]
 # place = "_".join(place_.split("_")[2:])
 place = "_".join(path_parts[-2].split("_")[-4:-2])
-year = "_".join(path_parts[-2].split("_")[-2:])
+year = "_".join(path_parts[-2].split("_")[-2])
 
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{place}/02_stay"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{place}/{year}/02_stay_and_move"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
@@ -50,8 +50,8 @@ combined_stays = pd.concat(weekly_records, ignore_index=True)\
 # log_message(f"{combined_stays.columns}", message_path)
 stay = combined_stays[combined_stays['stay_id'] != -1]
 move = combined_stays[combined_stays['stay_id'] == -1]
-log_message(f"{stay.shape[0]}", message_path)
-log_message(f"{move.shape[0]}", message_path)
+log_message(f"{place}_{year} stay points: {stay.shape[0]}", message_path)
+log_message(f"{place}_{year} move points: {move.shape[0]}", message_path)
 
 
 # # サブプロットの作成
