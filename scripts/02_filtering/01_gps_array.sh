@@ -7,12 +7,12 @@
 #$ -q all.q@Dwight
 #$ -pe smp 8
 #$ -tc 5
-#$ -t 1-299
-#$ -o logs/03_tokyo_2021/$TASK_ID.out
-#$ -e logs/03_tokyo_2021/$TASK_ID.err
+#$ -t 1-156
+#$ -o logs/07_osaka_2022/$TASK_ID.out
+#$ -e logs/07_osaka_2022/$TASK_ID.err
 
-# Split 03_tokyo_2021 into place and year
-PLACE_YEAR="03_tokyo_2021"
+# Split 07_osaka_2022 into place and year
+PLACE_YEAR="07_osaka_2022"
 PLACE=$(echo "$PLACE_YEAR" | sed 's/_[^_]*$//')  # Gets everything before the last underscore
 YEAR=$(echo "$PLACE_YEAR" | sed 's/.*_//')       # Gets everything after the last underscore
 
@@ -20,7 +20,7 @@ echo "Using place: $PLACE" >&1
 echo "Using year: $YEAR" >&1
 echo "Using place_year: $PLACE_YEAR" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/03_tokyo_2021"
+CHUNK_DIR="$DATA_DIR/interim/chunks/07_osaka_2022"
 FILTER_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly"
 
 echo "CHUNK: $CHUNK_DIR" >&1

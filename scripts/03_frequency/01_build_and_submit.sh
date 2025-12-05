@@ -10,14 +10,14 @@
 
 cd $HOME/workspace/TravelModeEstimation
 
-place_year="07_osaka_2022b"  #ここを変更！
+place_year="04_kanagawa_2022b"  #ここを変更！
 echo "place_year=${place_year}" >&2
 
 PLACE_YEAR=${place_year} bash ./scripts/03_frequency/01_make_chunks.sh >&2
 
 
-mkdir -p logs/${place_year}
-rm -rf logs/${place_year}/*
+mkdir -p logs/03_frequency/${place_year}
+rm -rf logs/03_frequency/${place_year}/*
 
 CHUNK_DIR="$DATA_DIR/interim/chunks/${place_year}"
 

@@ -21,9 +21,12 @@ from log_message import log_message
 message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_06_clustering.txt"
 
 def data_sepa(df, buffer):
-    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
-    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer} & buffer_bus < {buffer}")
+    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer}")
     df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
+    # df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
+    # df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    # df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
     # df_train = df.query(f"label == 'non-walk' & buffer_train >= {buffer}")
     # df_bus = df.query(f"label == 'non-walk' & buffer_bus >= {buffer} & buffer_train < {buffer}")
     # df_other = df.query(f"label == 'non-walk' & buffer_train < {buffer} & buffer_bus < {buffer}")

@@ -8,8 +8,8 @@
 #$ -pe smp 8
 #$ -tc 3
 #$ -t 1-__NUM__
-#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
-#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
+#$ -o logs/03_frequency/__PLACE_YEAR__/$TASK_ID.out
+#$ -e logs/03_frequency/__PLACE_YEAR__/$TASK_ID.err
 
 
 echo "Using place_year: __PLACE_YEAR__" >&1

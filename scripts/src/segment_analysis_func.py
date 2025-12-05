@@ -646,7 +646,7 @@ def plot_multi_band_with_reference(
         mode_label_map_ja2en = {
             "バス": "bus",
             "鉄道": "train",
-            "自転車": "bicycle",
+            "二輪車": "bicycle",
             "徒歩・その他": "walk",
             "車": "car",
         }
@@ -749,7 +749,8 @@ def plot_multi_band_with_reference(
 
 
 def plot_mode_analysis(df, OUT_DIR, color_map):
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    df = df.reset_index(drop=True)
+    fig, axes = plt.subplots(2, 3, figsize=(10, 10))
     # (1) walk / non‑walk の本数（All）
     count = df['mode_label'].value_counts()
     labels_order = count.index.tolist()
@@ -784,12 +785,12 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     sns.barplot(
         x=labels_order,
         y=total_distance.values,
-        ax=axes[1, 0],
+        ax=axes[0, 2],
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[1, 0].set_title('Total Distance by Label (All)')
-    axes[1, 0].set_xlabel('Label')
-    axes[1, 0].set_ylabel('Total Distance (m)')
+    axes[0, 2].set_title('Total Distance by Label (All)')
+    axes[0, 2].set_xlabel('Label')
+    axes[0, 2].set_ylabel('Total Distance (m)')
     # axes[1, 0].bar_label(barplot.containers[0],  # バーオブジェクト
     #                     labels=[f'{v:.1f}' for v in total_distance.values],
     #                     padding=3)
@@ -799,13 +800,41 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         data=df,
         x='mode_label',
         y='mean_speed',
+        ax=axes[1, 0],
+        order=labels_order,
+        palette=[color_map.get(lbl, None) for lbl in labels_order]
+    )
+    axes[1, 0].set_title('Mean Velocity by Label (All)')
+    axes[1, 0].set_xlabel('Label')
+    axes[1, 0].set_ylabel('Mean Velocity(m/s)')
+
+
+    #(5) buffer_bus
+    sns.boxplot(
+        data=df,
+        x='mode_label',
+        y='buffer_bus',
         ax=axes[1, 1],
         order=labels_order,
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[1, 1].set_title('Mean Velocity by Label (All)')
+    axes[1, 1].set_title('Buffer Bus by Label (All)')
     axes[1, 1].set_xlabel('Label')
-    axes[1, 1].set_ylabel('Mean Velocity(m/s)')
+    axes[1, 1].set_ylabel('Buffer Bus')
+
+    #(6) buffer_train
+    sns.boxplot(
+        data=df,
+        x='mode_label',
+        y='buffer_train',
+        ax=axes[1, 2],
+        order=labels_order,
+        palette=[color_map.get(lbl, None) for lbl in labels_order]
+    )
+    axes[1, 2].set_title('Buffer Train by Label (All)')
+    axes[1, 2].set_xlabel('Label')
+    axes[1, 2].set_ylabel('Buffer Train')
+
     plt.tight_layout()
     plt.savefig(f'{OUT_DIR}/mode_analysis.png', dpi=300)
     plt.close()

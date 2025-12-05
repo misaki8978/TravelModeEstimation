@@ -32,8 +32,8 @@ walk_cluster_col = {
 }
 train_cluster_col = {
    "-1": "walk", 
-   "0": "bus", 
-   "1": "car", 
+   "0": "car", 
+   "1": "bicycle", 
    "2": "train", 
    "3": "bicycle",
    "4": "bike"
@@ -41,9 +41,9 @@ train_cluster_col = {
 bus_cluster_col = {
    "-1": "walk", 
    "0": "bus", 
-   "1": "car", 
-   "2": "bicycle",
-   "3": "bike"
+   "1": "bicycle", 
+   "2": "car",
+   "3": "train"
    }
 other_cluster_col = {
    "-1": "walk", 
@@ -151,7 +151,7 @@ plot_multi_band_with_reference(
     titles=["本研究"],
     color_map=mode_color,
     ref_title="パーソントリップ",
-    ref_mode_share_ja={"バス":3.1, "鉄道":4.3, "自転車":16.1, "徒歩・その他":17.8, "車":58.6},
+    ref_mode_share_ja={"バス":2.3, "鉄道":28.5, "二輪車":16.3, "徒歩・その他":21.5, "車":31.4},
     savepath=os.path.join(OUT_DIR, "multi_band_non_holiday_rate_by_mode.png"),
     figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
 )
@@ -162,9 +162,17 @@ plot_multi_band_with_reference(
     titles=["本研究"],
     color_map=mode_color,
     ref_title="パーソントリップ",
-    ref_mode_share_ja={"バス":1.7, "鉄道":2.6, "自転車":11.1, "徒歩・その他":12.5, "車":72.1},
+    ref_mode_share_ja={"バス":2.0, "鉄道":16.3, "二輪車":12.3, "徒歩・その他":18.8, "車":50.6},
     savepath=os.path.join(OUT_DIR, "multi_band_holiday_rate_by_mode.png"),
     figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
 )
 
 log_message("done", message_path)
+
+# 地方都市 H27ver.
+#ref_mode_share_ja={"バス":3.1, "鉄道":4.3, "二輪車":16.1, "徒歩・その他":17.8, "車":58.6} 平日
+#ref_mode_share_ja={"バス":1.7, "鉄道":2.6, "二輪車":11.1, "徒歩・その他":12.5, "車":72.1} 休日
+
+# 三大都市圏 H27ver.
+#ref_mode_share_ja={"バス":2.3, "鉄道":28.5, "二輪車":16.3, "徒歩・その他":21.5, "車":31.4} 平日
+#ref_mode_share_ja={"バス":2.0, "鉄道":16.3, "二輪車":12.3, "徒歩・その他":18.8, "車":50.6} 休日

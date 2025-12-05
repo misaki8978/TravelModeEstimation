@@ -30,7 +30,7 @@ os.makedirs(f"/home/fukui/workspace/TravelModeEstimation/logs/06_clustering", ex
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/06_clustering/{PLACE}_{YEAR}.txt"
 with gzip.open(files, 'rt') as f:
     df = pd.read_csv(f)\
-        .query("n_points > 3 & max_speed < 30 & all_time <= 4*60*60 & all_distance < 40000")\
+        .query("n_points > 3 & max_speed <= 30 & all_time <= 4*60*60 & all_distance <= 40000")\
         
     f.close()
 # log_message(f"{df.columns}", message_path)
@@ -46,7 +46,7 @@ log_message(f"{len(df_walk)} walk segments", message_path)
 df_walk.to_csv(f"{OUT_DIR}/walk_gis_cluster.csv.gz", index=False, compression="gzip")
 
 #路線適合確率0.7を境目にデータを3つに分割
-df_train, df_bus, df_other = data_sepa(df, 0.8)
+df_train, df_bus, df_other = data_sepa(df, 0.7)
 log_message(f"near bus segment: {len(df_bus)}", message_path)
 log_message(f"near train segment: {len(df_train)}", message_path)
 log_message(f"other segment: {len(df_other)}", message_path)
@@ -78,11 +78,11 @@ gis_feature_cols = [
         ]
 
 
-df_normal_bus, df_clean_bus = start_clustering(df_bus, gis_feature_cols, feature_cols, 3, OUT_DIR)
-df_normal_train, df_clean_train = start_clustering(df_train, gis_feature_cols, feature_cols, 4, OUT_DIR)
+df_normal_bus, df_clean_bus = start_clustering(df_bus, gis_feature_cols, feature_cols, 4, OUT_DIR)
+df_normal_train, df_clean_train = start_clustering(df_train, gis_feature_cols, feature_cols, 3, OUT_DIR)
 df_normal_other, df_clean_other = start_clustering(df_other, gis_feature_cols, feature_cols, 2, OUT_DIR)
 
-# log_message(f"{df_clean_bus.columns}", message_path)
+log_message(f"{df_clean_bus.columns}", message_path)
 
 df_clean_bus.to_csv(f"{OUT_DIR}/bus_gis_cluster.csv.gz", index=False, compression="gzip")
 df_clean_train.to_csv(f"{OUT_DIR}/train_gis_cluster.csv.gz", index=False, compression="gzip")

@@ -9,7 +9,7 @@
 #$ -o logs/gis_frag.out
 #$ -e logs/gis_frag.err
 
-PLACE="07_osaka"
+PLACE="09_nagasaki"
 YEAR="2019"
 
 CLUSTER_DIR="$DATA_DIR/processed/06_02_${PLACE}/${YEAR}_weekly"
