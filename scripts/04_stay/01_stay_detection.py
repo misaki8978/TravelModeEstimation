@@ -113,25 +113,28 @@ def worker(task_id):
 
 
 if __name__ == "__main__":
-    files = sys.argv[1:-2]
+    files = sys.argv[1:-1]
     task_id = sys.argv[-1]
+    
     # message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_04_stay.txt"
     # log_message(f"files: {files}", message_path)
-    # path情報
+    # path情報取得
+   
     path_parts = files[0].split("/")
     place = path_parts[-5]
     year = path_parts[-4]
     month = path_parts[-1].split("_")[0]
     year_only = year.split("_")[0]
-    message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/04_stay/{place}_{year}/log_04_stay.txt"
+
+    message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/04_stay/{place}_{year_only}.txt"
     # message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/{place}_{year_only}/log_04_stay_multithread.txt"
 
-    # log_message(f"task_id: {task_id}", message_path)
+    # log_message(f"files: {files}", message_path)
 
-    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/basic"
-    # OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/basic"
-
+    # OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/hariharan"
+    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/gpt"
     os.makedirs(OUT_DIR, exist_ok=True)
+
 
     # ===== データ読み込み & dict化 =====
     all_files = []

@@ -9,7 +9,7 @@
 #$ -o logs/stay_and_move.out
 #$ -e logs/stay_and_move.err
 
-PLACE="07_osaka"
+PLACE="03_tokyo"
 YEAR="2019"
 
 # FILTERED_DIR="$DATA_DIR/interim/filter/${PLACE}/${YEAR}_weekly/"

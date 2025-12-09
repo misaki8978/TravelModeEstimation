@@ -3,8 +3,8 @@
 #$ -S /bin/bash
 #$ -cwd
 #$ -V
-#$ -N gps_weekly
-#$ -q all.q@Dwight
+#$ -N stay_detection
+#$ -q all.q@Claudette
 #$ -pe smp 10
 #$ -t 1-__NUM__
 #$ -tc 3

@@ -9,7 +9,7 @@
 #$ -o logs/06_clustering/clustering.out
 #$ -e logs/06_clustering/clustering.err
 
-PLACE="07_osaka"
+PLACE="03_tokyo"
 YEAR="2019"
 
 # INPUT_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly"

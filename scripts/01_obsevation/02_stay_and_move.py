@@ -25,7 +25,7 @@ path_parts = _path.split("/")
 # place_ = path_parts[-2]
 # place = "_".join(place_.split("_")[2:])
 place = "_".join(path_parts[-2].split("_")[-4:-2])
-year = "_".join(path_parts[-2].split("_")[-2])
+year = path_parts[-2].split("_")[-2]
 
 OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{place}/{year}/02_stay_and_move"
 os.makedirs(OUT_DIR, exist_ok=True)

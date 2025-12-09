@@ -4,12 +4,12 @@
 #$ -cwd
 #$ -V
 #$ -N gps_weekly
-#$ -q all.q@Dwight
+#$ -q all.q@Cheryl
 #$ -pe smp 8
 #$ -tc 5
 #$ -t 1-__NUM__
-#$ -o logs/__PLACE_YEAR__/$TASK_ID.out
-#$ -e logs/__PLACE_YEAR__/$TASK_ID.err
+#$ -o logs/02_filtering/__PLACE_YEAR__/$TASK_ID.out
+#$ -e logs/02_filtering/__PLACE_YEAR__/$TASK_ID.err
 
 # Split __PLACE_YEAR__ into place and year
 PLACE_YEAR="__PLACE_YEAR__"

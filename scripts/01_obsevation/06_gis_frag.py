@@ -22,6 +22,7 @@ files = sys.argv[1:]
 YEAR = files[0].split("/")[-2]
 PLACE = files[0].split("/")[-3].split("_")[-2:]
 PLACE = "_".join(PLACE)
+log_message(f"{PLACE}", message_path)
 OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag"
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -32,23 +33,23 @@ walk_cluster_col = {
 }
 train_cluster_col = {
    "-1": "walk", 
-   "0": "car", 
+   "0": "train", 
    "1": "bicycle", 
-   "2": "train", 
+   "2": "car", 
    "3": "bicycle",
    "4": "bike"
    }
 bus_cluster_col = {
    "-1": "walk", 
-   "0": "bus", 
-   "1": "bicycle", 
-   "2": "car",
-   "3": "train"
+   "0": "car", 
+   "1": "train", 
+   "2": "bus",
+   "3": "bicycle"
    }
 other_cluster_col = {
    "-1": "walk", 
-   "0": "bicycle", 
-   "1": "car",
+   "0": "car", 
+   "1": "bicycle",
    "2": "bike"
    }
 mode_color = {

@@ -4,16 +4,16 @@
 #$ -cwd
 #$ -V
 #$ -N gps_segmentation
-#$ -q all.q@Cheryl
+#$ -q all.q@Claudette
 #$ -pe smp 8
-#$ -t 1-10
-#$ -o logs/07_osaka_2019/$TASK_ID.out
-#$ -e logs/07_osaka_2019/$TASK_ID.err
+#$ -t 1-12
+#$ -o logs/05_segment/09_nagasaki_2019/$TASK_ID.out
+#$ -e logs/05_segment/09_nagasaki_2019/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
 
-# Split 07_osaka_2019 into place and year
-PLACE_YEAR="07_osaka_2019"
+# Split 09_nagasaki_2019 into place and year
+PLACE_YEAR="09_nagasaki_2019"
 PLACE=$(echo "$PLACE_YEAR" | sed 's/_[^_]*$//')  # Gets everything before the last underscore
 YEAR=$(echo "$PLACE_YEAR" | sed 's/.*_//')       # Gets everything after the last underscore
 

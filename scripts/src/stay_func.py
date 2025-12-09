@@ -238,8 +238,8 @@ def extract_stays_fast(
 
     # インデックス・型の整備
     df = df.sort_values('datetime').reset_index(drop=True)
-    lat_rad = np.radians(df['latitude'].to_numpy(dtype=np.float64))
-    lon_rad = np.radians(df['longitude'].to_numpy(dtype=np.float64))
+    lat_rad = df['latitude']
+    lon_rad = df['longitude']
     n = len(df)
 
     stays: List[Dict] = []

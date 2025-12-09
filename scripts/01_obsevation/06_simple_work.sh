@@ -6,10 +6,10 @@
 #$ -N gis_frag
 #$ -q all.q@Cheryl
 #$ -pe smp 1
-#$ -o logs/gis_frag.out
-#$ -e logs/gis_frag.err
+#$ -o logs/01_obsevation/gis_frag.out
+#$ -e logs/01_obsevation/gis_frag.err
 
-PLACE="09_nagasaki"
+PLACE="03_tokyo"
 YEAR="2019"
 
 CLUSTER_DIR="$DATA_DIR/processed/06_02_${PLACE}/${YEAR}_weekly"
