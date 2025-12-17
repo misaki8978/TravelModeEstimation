@@ -20,10 +20,14 @@ files = sys.argv[1]  # 引数でファイルリストを受け取る
 
 YEAR = files.split("/")[-2]
 PLACE = "_".join(files.split("/")[-3].split("_")[-2:])
-OUT_DIR = f"/home/data/fukui/processed/06_02_{PLACE}/{YEAR}"
+OUT_DIR = f"/home/data/fukui/processed/06_02/{PLACE}/{YEAR}/stops"
+# OUT_DIR = f"/home/data/fukui/processed/06_02_{PLACE}/{YEAR}/"
+
 # log_message(f"{OUT_DIR}", message_path)
 os.makedirs(OUT_DIR, exist_ok=True)
-OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering"
+OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering/stops"
+# OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering/pre"
+
 # log_message(f"{OUT_FIG}", message_path)
 os.makedirs(OUT_FIG, exist_ok=True)
 os.makedirs(f"/home/fukui/workspace/TravelModeEstimation/logs/06_clustering", exist_ok=True)
@@ -73,13 +77,16 @@ gis_feature_cols = [
         'stop_rate',
         'buffer_train',
         'buffer_bus',
+        'train_stop_proximity_rate',
+        'bus_stop_proximity_rate',
         # 'rail_flag',
         # 'bus_flag'
         ]
-
-
-df_normal_bus, df_clean_bus = start_clustering(df_bus, gis_feature_cols, feature_cols, 4, OUT_DIR)
-df_normal_train, df_clean_train = start_clustering(df_train, gis_feature_cols, feature_cols, 3, OUT_DIR)
+log_message(f"{len(df_bus)}", message_path)
+df_bus = df_bus.dropna(subset=gis_feature_cols)
+log_message(f"{len(df_bus)}", message_path)
+df_normal_bus, df_clean_bus = start_clustering(df_bus, gis_feature_cols, feature_cols, 3, OUT_DIR)
+df_normal_train, df_clean_train = start_clustering(df_train, gis_feature_cols, feature_cols, 4, OUT_DIR)
 df_normal_other, df_clean_other = start_clustering(df_other, gis_feature_cols, feature_cols, 2, OUT_DIR)
 
 log_message(f"{df_clean_bus.columns}", message_path)

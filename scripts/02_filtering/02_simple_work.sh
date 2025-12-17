@@ -9,8 +9,8 @@
 #$ -o logs/02_filtering/simple_work.out
 #$ -e logs/02_filtering/simple_work.err
 
-PLACE="08_fukuoka"
-YEAR="2022"
+PLACE="03_tokyo"
+YEAR="2020"
 
 FILTERED_DIR="$DATA_DIR/interim/filtered/${PLACE}/${YEAR}_weekly/user_counts_4500/bulk/"
 

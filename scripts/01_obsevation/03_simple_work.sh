@@ -9,7 +9,7 @@
 #$ -o logs/seg_analysis.out
 #$ -e logs/seg_analysis.err
 
-PLACE="07_osaka"
+PLACE="09_nagasaki"
 YEAR="2019"
 
 # INPUT_DIR="$DATA_DIR/processed/05_01_${PLACE}_replay/${YEAR}_weekly_basic"

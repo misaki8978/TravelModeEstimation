@@ -627,6 +627,185 @@ def _best_text_color(color):
     # L = 0.2126*r + 0.7152*g + 0.0722*b
     # return "black" if L > 0.6 else "white"
 
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+# def plot_multi_band_with_reference(
+#     df,
+#     value_cols,
+#     *,
+#     label_col="mode_label",
+#     ref_title="Person Trip Survey",
+#     ref_mode_share_ja=None,   # {"バス":1.3,"鉄道":2.2,"自転車":8.1,"徒歩・その他":12.7,"車":75.7}
+#     mode_label_map_ja2en=None,
+#     titles=None,
+#     pct_label_threshold=0.02,
+#     figsize=(12, 6.5),
+#     savepath=None,
+#     color_map=None,
+#     legend_loc="lower right",     # 追加: レジェンド位置
+#     legend_ncol=1,                # 追加: レジェンド列数
+#     legend_bbox_to_anchor=(0.995, 0.02),  # 追加: 図全体の右下寄せ
+# ):
+#     # --- ラベル対応 ---
+#     if mode_label_map_ja2en is None:
+#         mode_label_map_ja2en = {
+#             "バス": "bus",
+#             "鉄道": "train",
+#             "二輪車": "bicycle",
+#             "徒歩・その他": "walk",
+#             "車": "car",
+#         }
+#     # 逆引き（英→日）
+#     mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
+
+#     if ref_mode_share_ja is None:
+#         ref_mode_share_ja = {"バス": 1.3, "鉄道": 2.2, "自転車": 8.1, "徒歩・その他": 12.7, "車": 75.7}
+
+#     # --- PT調査：比率＆描画順（降順） ---
+#     ref_total = sum(ref_mode_share_ja.values()) or 1.0
+#     ref_items = []
+#     for ja, v in ref_mode_share_ja.items():
+#         en = mode_label_map_ja2en.get(ja, ja)
+#         ref_items.append((en, float(v) / ref_total))
+#     ref_items.sort(key=lambda x: x[1], reverse=True)
+#     ref_order = [lab for lab, _ in ref_items]  # ← 以降この順
+
+#     # --- 図準備 ---
+#     # rows = 1 + len(value_cols)
+#     cols = 1 + len(value_cols)
+#     if titles is None:
+#         titles = value_cols
+#     # row_titles = [ref_title] + titles
+#     col_titles = [ref_title] + titles
+
+#     # fig, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True, constrained_layout=True)
+#     fig, axes = plt.subplots(1, cols, figsize=figsize, sharex=True, constrained_layout=True)
+#     # if rows == 1:
+#     #     axes = [axes]
+#     if cols == 1:
+#         axes = [axes]
+
+#     # xticks = [0, 0.25, 0.5, 0.75, 1.0]
+#     # xtlbls = [f"{int(t * 100)}%" for t in xticks]
+#     yticks = [0, 0.25, 0.5, 0.75, 1.0]
+#     ytlbls = [f"{int(t * 100)}%" for t in yticks]
+
+#     # ---------- 1段目（PT調査） ----------
+#     # ax0 = axes[0]
+#     ax0 = axes[0]
+#     left = 0.0
+#     for lab, w in ref_items:
+#         face = (color_map or {}).get(lab, None)
+#         bar = ax0.bar(0, w, bottom="left", align="edge", color=face, width=1.0)
+#         if w >= pct_label_threshold:
+#             ax0.text(
+#                 -0.05, left + w / 2,
+#                 f"{w * 100:.1f}%",
+#                 ha="center", va="center", fontsize=12, fontweight="bold",
+#                 rotation=90,
+#                 color=_best_text_color(bar[0].get_facecolor())
+#             )
+#         left += w
+
+#     # ax0.set_xlim(0, 1)
+#     # ax0.set_ylim(-0.5, 0.5)
+#     # ax0.set_yticks([])
+#     # for s in ("left", "right", "top", "bottom"):
+#     #     ax0.spines[s].set_visible(False)
+#     ax0.set_ylim(0, 1)
+#     ax0.set_xlim(-0.5, 0.5)
+#     ax0.set_xticks(yticks)
+#     ax0.set_xticklabels(ytlbls)
+#     for s in ("left", "right", "top", "bottom"):
+#         ax0.spines[s].set_visible(False)
+
+#     # 行タイトル
+#     # ax0.text(-0.02, 0.75, row_titles[0], transform=ax0.transAxes,
+#     #          ha="right", va="center", fontsize=13)
+#     ax0.text(-0.02, 0.75, col_titles[0], transform=ax0.transAxes,
+#              ha="right", va="center", fontsize=13)
+
+#     # ---------- 2段目以降 ----------
+#     for ax, value_col, rtitle in zip(axes[1:], value_cols, col_titles[1:]):
+#         # ラベル→値の合計→比率
+#         prop = dict.fromkeys(ref_order, 0.0)
+#         sub = df[[label_col, value_col]].copy()
+#         total = float(sub[value_col].sum())
+#         if total > 0 and np.isfinite(total):
+#             g = sub.groupby(label_col, as_index=False)[value_col].sum()
+#             for _, row in g.iterrows():
+#                 prop[str(row[label_col])] = float(row[value_col]) / total
+
+#         left = 0.0
+#         for lab in ref_order:
+#             w = prop.get(lab, 0.0)
+#             if w <= 0:
+#                 continue
+#             face = (color_map or {}).get(lab, None)
+#             bar = ax.bar(0, w, bottom="left", align="edge", color=face, width=1.0)
+#             if w >= pct_label_threshold:
+#                 ax.text(
+#                     -0.05, left + w / 2,
+#                     f"{w * 100:.1f}%",
+#                     ha="center", va="center", fontsize=12, fontweight="bold",
+#                     rotation=90,
+#                     color=_best_text_color(bar[0].get_facecolor())
+#                 )
+#             bottom += w
+
+#         # ax.set_xlim(0, 1)
+#         # ax.set_ylim(-0.5, 0.5)
+#         # ax.set_yticks([])
+#         # for s in ("left", "right", "top", "bottom"):
+#         #     ax.spines[s].set_visible(False)
+#         ax.set_ylim(0, 1)
+#         ax.set_xlim(-0.5, 0.5)
+#         ax.set_xticks([])
+#         for s in ("left", "right", "top", "bottom"):
+#             ax.spines[s].set_visible(False)
+
+#         # 行タイトル
+#         # ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
+#         #         ha="right", va="center", fontsize=13)
+#         ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
+#                 ha="right", va="center", fontsize=13)
+
+#     # x 目盛は最下段のみ
+#     # for ax in axes[:-1]:
+#     #     ax.set_xticks([])
+#     # axes[-1].set_xticks(yticks)
+#     # axes[-1].set_xticklabels(ytlbls, fontsize=11)
+#     for ax in axes[:-1]:
+#         ax.set_yticks([])
+#     axes[-1].set_yticks(yticks)
+#     axes[-1].set_yticklabels(ytlbls, fontsize=11)
+
+#     # ---------- レジェンド（図全体の右下） ----------
+#     handles = []
+#     for lab in ref_order:
+#         face = (color_map or {}).get(lab, None)
+#         # ja = mode_label_map_en2ja.get(lab, lab)
+#         handles.append(mpatches.Patch(facecolor=face, edgecolor="none", label=lab))
+#     # 追加：帯グラフ間の縦余白を調整
+#     fig.subplots_adjust(hspace=0.03)
+#     fig.legend(
+#         handles=handles,
+#         loc=legend_loc,
+#         bbox_to_anchor=legend_bbox_to_anchor,
+#         ncol=legend_ncol,
+#         frameon=False,
+#         fontsize=11,
+#     )
+
+#     if savepath:
+#         os.makedirs(os.path.dirname(savepath), exist_ok=True)
+#         plt.savefig(savepath, dpi=220, bbox_inches="tight")
+
+#     return fig, axes
+
 def plot_multi_band_with_reference(
     df,
     value_cols,
@@ -743,8 +922,7 @@ def plot_multi_band_with_reference(
 
     if savepath:
         os.makedirs(os.path.dirname(savepath), exist_ok=True)
-        plt.savefig(savepath, dpi=220, bbox_inches="tight")
-    
+        plt.savefig(savepath, dpi=220, bbox_inches="tight")    
 
 
 
@@ -761,9 +939,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         ax=axes[0, 0],
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[0, 0].set_title('Segments by Label (All)')
-    axes[0, 0].set_xlabel('Label')
-    axes[0, 0].set_ylabel('Count')
+    axes[0, 0].set_title('Segments Count', fontsize=15)
+    axes[0, 0].set_xlabel('Label', fontsize=13)
+    axes[0, 0].set_ylabel('Count', fontsize=13)
+    axes[0,0].tick_params(axis='x', labelsize=13)
 
     #(2) 総セグメント時間
     total_duration = df.groupby('mode_label')['all_time'].sum().reindex(labels_order, fill_value=0)
@@ -773,9 +952,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         ax=axes[0, 1],
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[0, 1].set_title('Total Duration by Label (All)')
-    axes[0, 1].set_xlabel('Label')
-    axes[0, 1].set_ylabel('Total Duration (sec)')
+    axes[0, 1].set_title('Total Duration', fontsize=15)
+    axes[0, 1].set_xlabel('Label', fontsize=13)
+    axes[0, 1].set_ylabel('Total Duration (sec)', fontsize=13)
+    axes[0, 1].tick_params(axis='x', labelsize=13)
     # axes[0, 1].bar_label(barplot.containers[0],  # バーオブジェクト
     #                     labels=[f'{v:.1f}' for v in total_duration.values],
     #                     padding=3)
@@ -788,9 +968,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         ax=axes[0, 2],
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[0, 2].set_title('Total Distance by Label (All)')
-    axes[0, 2].set_xlabel('Label')
-    axes[0, 2].set_ylabel('Total Distance (m)')
+    axes[0, 2].set_title('Total Distance', fontsize=15)
+    axes[0, 2].set_xlabel('Label', fontsize=13)
+    axes[0, 2].set_ylabel('Total Distance (m)', fontsize=13)
+    axes[0, 2].tick_params(axis='x', labelsize=13)
     # axes[1, 0].bar_label(barplot.containers[0],  # バーオブジェクト
     #                     labels=[f'{v:.1f}' for v in total_distance.values],
     #                     padding=3)
@@ -804,10 +985,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         order=labels_order,
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[1, 0].set_title('Mean Velocity by Label (All)')
-    axes[1, 0].set_xlabel('Label')
-    axes[1, 0].set_ylabel('Mean Velocity(m/s)')
-
+    axes[1, 0].set_title('Mean Velocity', fontsize=15)
+    axes[1, 0].set_xlabel('Label', fontsize=13)
+    axes[1, 0].set_ylabel('Mean Velocity(m/s)', fontsize=13)
+    axes[1, 0].tick_params(axis='x', labelsize=13)
 
     #(5) buffer_bus
     sns.boxplot(
@@ -818,10 +999,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         order=labels_order,
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[1, 1].set_title('Buffer Bus by Label (All)')
-    axes[1, 1].set_xlabel('Label')
-    axes[1, 1].set_ylabel('Buffer Bus')
-
+    axes[1, 1].set_title('Proximity Rate to Bus Route', fontsize=15)
+    axes[1, 1].set_xlabel('Label', fontsize=13)
+    axes[1, 1].set_ylabel('Proximity Rate to Bus Route', fontsize=13)
+    axes[1, 1].tick_params(axis='x', labelsize=13)
     #(6) buffer_train
     sns.boxplot(
         data=df,
@@ -831,10 +1012,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
         order=labels_order,
         palette=[color_map.get(lbl, None) for lbl in labels_order]
     )
-    axes[1, 2].set_title('Buffer Train by Label (All)')
-    axes[1, 2].set_xlabel('Label')
-    axes[1, 2].set_ylabel('Buffer Train')
-
+    axes[1, 2].set_title('Proximity Rate to Railway', fontsize=15)
+    axes[1, 2].set_xlabel('Label', fontsize=13)
+    axes[1, 2].set_ylabel('Proximity Rate to Railway ', fontsize=13)
+    axes[1, 2].tick_params(axis='x', labelsize=13)
     plt.tight_layout()
     plt.savefig(f'{OUT_DIR}/mode_analysis.png', dpi=300)
     plt.close()
@@ -878,3 +1059,14 @@ def mode_represent(list_mode):
         if yusen_mode[i] in list_mode:
             return yusen_mode[i]
     return "walk"
+
+
+def accuracy_analysis(mode_pred, mode_true):
+    mode_pred_100 = mode_pred * 100
+    ref_series = pd.Series(mode_true)
+    intersection = np.minimum(mode_pred_100, ref_series).sum()
+
+    log_message(f"mode_pred_100: {mode_pred_100}", message_path)
+    log_message(f"ref_series: {ref_series}", message_path)
+    log_message(f"intersection: {intersection}", message_path)
+    return intersection

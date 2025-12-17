@@ -21,12 +21,14 @@ from log_message import log_message
 message_path = "/home/fukui/workspace/TravelModeEstimation/logs/log_06_clustering.txt"
 
 def data_sepa(df, buffer):
-    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer} & buffer_bus < {buffer}")
-    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer}")
-    df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
-    # df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
-    # df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    df["train_stop_proximity_rate"] = df["train_stop_proximity_rate"].fillna(-1.0)
+    df["bus_stop_proximity_rate"] = df["bus_stop_proximity_rate"].fillna(-1.0)
+    # df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer} & buffer_bus < {buffer}")
+    # df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer}")
     # df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
+    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
+    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
     # df_train = df.query(f"label == 'non-walk' & buffer_train >= {buffer}")
     # df_bus = df.query(f"label == 'non-walk' & buffer_bus >= {buffer} & buffer_train < {buffer}")
     # df_other = df.query(f"label == 'non-walk' & buffer_train < {buffer} & buffer_bus < {buffer}")
@@ -199,7 +201,7 @@ def Maximum_Membership_Degrees(df, OUT_DIR, gis):
     gis_name = gis.split("_")[0]
     mode_name = gis.split("_")[1]
     os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
-    # df_clean = df.query("is_walk == 0")
+    # df_clean = df.query("label == 'non-walk'")
     df_clean = df.query("is_walk == 0")
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.hist(df_clean[f"max_membership_{gis_name}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
@@ -315,8 +317,8 @@ def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
 
 def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
     # 特徴量数に応じて行数を自動調整（列数は4固定）
-    # df_clean = df.query("is_walk == 0")
     df_clean = df.query("is_walk == 0")
+    # df_clean = df.query("label == 'non-walk'")
     n_features = len(feature_cols)
     ncols = 4
     nrows = int(np.ceil(n_features / ncols)) if n_features > 0 else 1
@@ -507,3 +509,5 @@ def cluster_analysis(df, OUT_DIR):
     # 仕上げ
     fig.suptitle('Cluster Share Overview', fontsize=16)
     fig.savefig(f'{OUT_DIR}/cluster_analysis.png', dpi=200, bbox_inches='tight')
+
+

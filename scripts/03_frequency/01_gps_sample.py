@@ -62,6 +62,6 @@ if weekly_records:
         chunk = result[i:i + chunk_size]
         output_file_name = f"{file_number}_weekly_user_counts_{i // chunk_size + 1}.csv.gz"
         chunk.to_csv(f"/home/data/fukui/interim/agg_before_filter/{folder_name}/bulk/" + output_file_name, index=False, compression='gzip')
-        log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {result.shape[0]} rows.")
+        # log_message(f"Saved weekly_user_counts.csv with {len(chunk)} rows / {result.shape[0]} rows.")
 else:
     log_message("No valid data processed.")

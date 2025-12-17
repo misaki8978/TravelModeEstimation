@@ -7,14 +7,14 @@
 #$ -q all.q@Dwight
 #$ -pe smp 8
 #$ -tc 3
-#$ -t 1-69
-#$ -o logs/03_frequency/04_kanagawa_2022b/$TASK_ID.out
-#$ -e logs/03_frequency/04_kanagawa_2022b/$TASK_ID.err
+#$ -t 1-50
+#$ -o logs/03_frequency/04_kanagawa_2021/$TASK_ID.out
+#$ -e logs/03_frequency/04_kanagawa_2021/$TASK_ID.err
 
 
-echo "Using place_year: 04_kanagawa_2022b" >&1
+echo "Using place_year: 04_kanagawa_2021" >&1
 
-CHUNK_DIR="$DATA_DIR/interim/chunks/04_kanagawa_2022b"
+CHUNK_DIR="$DATA_DIR/interim/chunks/04_kanagawa_2021"
 
 echo "CHUNK: $CHUNK_DIR"
 

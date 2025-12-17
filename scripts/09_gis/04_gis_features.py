@@ -5,7 +5,7 @@ import geopandas as gpd
 
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
-from gis import division_several_file, train_from_OSM, make_buffer, is_in_buffer, is_in_buffer_series,_covers_flag, file_to_gdf, make_features, make_features_walk
+from gis import division_several_file, make_buffer, is_in_buffer, is_in_buffer_series,_covers_flag, file_to_gdf, make_features, make_features_walk
 
 
 
@@ -15,7 +15,7 @@ files = sys.argv[1:]
 # log_message(f"{files}", log_path)
 
 #バスのデータフレームとファイルを取得
-bus_gdf, rail_gdf, file, year, place = division_several_file(files) #geopandasのデータフレームに変換
+bus_gdf, rail_gdf, bus_stop, train_stop, file, year, place = division_several_file(files) #geopandasのデータフレームに変換
 # os.makedirs(f"/home/fukui/workspace/TravelModeEstimation/logs/09_gis", exist_ok=True)
 log_path  = f"/home/fukui/workspace/TravelModeEstimation/logs/09_gis/{place}_{year}.txt"
 OUT_PROCESSED = f"/home/data/fukui/processed/09_04_re/{place}/{year}"
@@ -28,6 +28,7 @@ os.makedirs(OUT_PROCESSED+"/GPS", exist_ok=True)
 #バッファーを作成
 train_buffer = make_buffer(rail_gdf, 30)
 bus_buffer = make_buffer(bus_gdf, 30)
+
 
 #ファイルごとにバッファー内にあるかどうかを確認
 month_list = []
@@ -78,7 +79,7 @@ walk_gdf.to_csv(f"{OUT_PROCESSED}/walk_gdf.csv.gz", index=False, compression="gz
 
 # log_message(f"{df_isin.columns}", log_path)
 #特徴量データフレームを作成
-gdf_features = make_features(gdf_isin)
+gdf_features = make_features(gdf_isin, bus_stop, train_stop)
 gdf_features.to_csv(f"{OUT_PROCESSED}/segment_gis_features.csv.gz", index=False, compression="gzip")
 gdf_features_walk = make_features_walk(walk_gdf)
 log_message(f"{gdf_features.columns}", log_path)

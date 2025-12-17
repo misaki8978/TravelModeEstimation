@@ -17,119 +17,125 @@ message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_01_ob_01_we
 
 files = sys.argv[1:]  # 引数でファイルリストを受け取る
 
-_path = os.path.dirname(files[0])
-path_parts = _path.split("/")
-# 最後の2つの要素を取得
-year = path_parts[-1]
-place = path_parts[-2]
+df = pd.read_csv(files[0], compression='gzip')
+log_message(f"{len(df)}", message_path)
+log_message(f"{df.columns}", message_path)
+log_message(f"{df[df["bus_stop_proximity_rate"]!=0]["bus_stop_proximity_rate"].describe()}", message_path)
+log_message(f"{df[df["train_stop_proximity_rate"]!=0]["train_stop_proximity_rate"].describe()}", message_path)
 
-year_only = year.split("_")[0]
+# _path = os.path.dirname(files[0])
+# path_parts = _path.split("/")
+# # 最後の2つの要素を取得
+# year = path_parts[-1]
+# place = path_parts[-2]
 
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_weekly_data/{place}/{year}"
-os.makedirs(OUT_DIR, exist_ok=True)
+# year_only = year.split("_")[0]
 
-
-weekly_records = []
-for file in files:
-    try:
-        with gzip.open(file, 'rt') as f:
-            df = pd.read_csv(f)
-            # log_message(f"{(df.shape[0])}", message_path)
-            weekly_records.append(df)
-            f.close()
-    except FileNotFoundError:
-        log_message(f"ファイル {file} が見つかりませんでした。", message_path)
-
-df = pd.concat(weekly_records, ignore_index=True)
-
-log_message(f"{df.shape[0]} rows", message_path)
-# log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
-log_message(f"{df['count'].sum()} GPS points", message_path)
-log_message(f"{len(df['hashed_adid'].unique())} users", message_path)
+# OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_weekly_data/{place}/{year}"
+# os.makedirs(OUT_DIR, exist_ok=True)
 
 
-# 週ごとのアクティブユーザー数
-weekly_active = df.filter(items=['week_start', 'hashed_adid'])\
-                  .groupby(by=['week_start']).nunique()
+# weekly_records = []
+# for file in files:
+#     try:
+#         with gzip.open(file, 'rt') as f:
+#             df = pd.read_csv(f)
+#             # log_message(f"{(df.shape[0])}", message_path)
+#             weekly_records.append(df)
+#             f.close()
+#     except FileNotFoundError:
+#         log_message(f"ファイル {file} が見つかりませんでした。", message_path)
 
-weekly_point = df.filter(items=['week_start', 'count'])\
-                 .groupby(by=['week_start']).sum()
+# df = pd.concat(weekly_records, ignore_index=True)
 
-
-user_point = df.filter(items=['hashed_adid', 'count'])\
-                 .groupby(by=['hashed_adid']).sum()
-
-user_weekcount = df.filter(items=['hashed_adid', 'week_start'])\
-                 .groupby(by=['hashed_adid']).nunique()\
-                 .sort_values('week_start')\
-                 .merge(user_point, on='hashed_adid', how="left")
-
-# log_message(f"weekly_point: {weekly_point.shape[0]}", message_path)
-# log_message(f"{(user_weekcount).head()}", message_path)
-
-
-fig, ax = plt.subplots(2,1, figsize=(16, 18))
-# weekly_active.plot(ax=ax)
-ax1 = ax[0]
-
-ax1.plot(
-        weekly_active.index,
-        weekly_active['hashed_adid'],
-        marker='o',
-        linestyle='-',
-        color='blue',
-        markersize=5,
-        linewidth=2
-        )
-ax2 = ax1.twinx()
-
-ax2.plot(
-        weekly_point.index,
-        weekly_point['count'],
-        marker='o',
-        linestyle='-',
-        color='orange',
-        markersize=5,
-        linewidth=2
-        )
-# ax.set_title("週ごとのアクティブユーザー数の推移")
-# ax.set_xlabel("週")
-# ax.set_ylabel("アクティブユーザー数")
-
-ax1.set_title(f"{year_only} count of activeusers and GPS points per week")
-ax1.set_xlabel("week")
-ax1.set_ylabel("acditveate users")
-ax2.set_ylabel("GPS points")
+# log_message(f"{df.shape[0]} rows", message_path)
+# # log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
+# log_message(f"{df['count'].sum()} GPS points", message_path)
+# log_message(f"{len(df['hashed_adid'].unique())} users", message_path)
 
 
-ax1.set_xticks(weekly_active.index[::4])
-ax1.set_xticklabels(weekly_active.index[::4], rotation=50)
+# # 週ごとのアクティブユーザー数
+# weekly_active = df.filter(items=['week_start', 'hashed_adid'])\
+#                   .groupby(by=['week_start']).nunique()
 
-ax2.set_yscale('log')
-
-
-ax1.legend(['users'], loc='upper left')
-ax2.legend(['GPS points'],loc='upper right')
-
-ax1.grid(axis='both', which='major', color='gray', linestyle='--', linewidth=0.5)
+# weekly_point = df.filter(items=['week_start', 'count'])\
+#                  .groupby(by=['week_start']).sum()
 
 
-ax_user = ax[1]
+# user_point = df.filter(items=['hashed_adid', 'count'])\
+#                  .groupby(by=['hashed_adid']).sum()
 
-ax_user.scatter(
-            user_weekcount['week_start'],
-            user_weekcount['count'],
-            marker='o',
-            color='blue'
-            )
+# user_weekcount = df.filter(items=['hashed_adid', 'week_start'])\
+#                  .groupby(by=['hashed_adid']).nunique()\
+#                  .sort_values('week_start')\
+#                  .merge(user_point, on='hashed_adid', how="left")
 
-ax_user.set_title(f"{year_only} Total GPS Points by Number of Active Weeks", fontsize=17)
-ax_user.set_xlabel("Annual Appearance Weeks", fontsize=15)
-ax_user.set_ylabel("Total GPS Points", fontsize=15)
+# # log_message(f"weekly_point: {weekly_point.shape[0]}", message_path)
+# # log_message(f"{(user_weekcount).head()}", message_path)
 
-ax_user.set_yscale('log')
 
-ax_user.grid(axis='both', which='major', color='gray', linestyle='--', linewidth=0.5)
-fig.tight_layout()
-fig.savefig(f"{OUT_DIR}/weekly_base_plot.png")
-plt.close(fig)
+# fig, ax = plt.subplots(2,1, figsize=(16, 18))
+# # weekly_active.plot(ax=ax)
+# ax1 = ax[0]
+
+# ax1.plot(
+#         weekly_active.index,
+#         weekly_active['hashed_adid'],
+#         marker='o',
+#         linestyle='-',
+#         color='blue',
+#         markersize=5,
+#         linewidth=2
+#         )
+# ax2 = ax1.twinx()
+
+# ax2.plot(
+#         weekly_point.index,
+#         weekly_point['count'],
+#         marker='o',
+#         linestyle='-',
+#         color='orange',
+#         markersize=5,
+#         linewidth=2
+#         )
+# # ax.set_title("週ごとのアクティブユーザー数の推移")
+# # ax.set_xlabel("週")
+# # ax.set_ylabel("アクティブユーザー数")
+
+# ax1.set_title(f"{year_only} count of activeusers and GPS points per week")
+# ax1.set_xlabel("week")
+# ax1.set_ylabel("acditveate users")
+# ax2.set_ylabel("GPS points")
+
+
+# ax1.set_xticks(weekly_active.index[::4])
+# ax1.set_xticklabels(weekly_active.index[::4], rotation=50)
+
+# ax2.set_yscale('log')
+
+
+# ax1.legend(['users'], loc='upper left')
+# ax2.legend(['GPS points'],loc='upper right')
+
+# ax1.grid(axis='both', which='major', color='gray', linestyle='--', linewidth=0.5)
+
+
+# ax_user = ax[1]
+
+# ax_user.scatter(
+#             user_weekcount['week_start'],
+#             user_weekcount['count'],
+#             marker='o',
+#             color='blue'
+#             )
+
+# ax_user.set_title(f"{year_only} Total GPS Points by Number of Active Weeks", fontsize=17)
+# ax_user.set_xlabel("Annual Appearance Weeks", fontsize=15)
+# ax_user.set_ylabel("Total GPS Points", fontsize=15)
+
+# ax_user.set_yscale('log')
+
+# ax_user.grid(axis='both', which='major', color='gray', linestyle='--', linewidth=0.5)
+# fig.tight_layout()
+# fig.savefig(f"{OUT_DIR}/weekly_base_plot.png")
+# plt.close(fig)

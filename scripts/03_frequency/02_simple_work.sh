@@ -9,7 +9,7 @@
 #$ -o logs/03_frequency/simple_work.out
 #$ -e logs/03_frequency/simple_work.err
 
-place_year="08_fukuoka_2019"  #ここを変更！
+place_year="04_kanagawa_2019"  #ここを変更！
 
 DATA_DIR1="/home/data/fukui/interim/agg_before_filter/${place_year}/bulk/"
 DATA_DIR2="/home/data/fukui/interim/agg_before_filter/${place_year}b/bulk/"

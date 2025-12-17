@@ -10,7 +10,7 @@
 
 cd $HOME/workspace/TravelModeEstimation
 
-place_year="04_kanagawa_2022b"  #ここを変更！
+place_year="04_kanagawa_2021"  #ここを変更！
 echo "place_year=${place_year}" >&2
 
 PLACE_YEAR=${place_year} bash ./scripts/03_frequency/01_make_chunks.sh >&2

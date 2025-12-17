@@ -5,7 +5,7 @@
 #$ -q all.q@Claudette
 #$ -tc 3
 # 01_build_and_submit.sh
-place_year="09_nagasaki_2019"  #ここを変更！
+place_year="03_tokyo_2022"  #ここを変更！
 echo "place_year=${place_year}" >&2
 # rm logs/${place_year}/log_04_stay_multithread.txt
 

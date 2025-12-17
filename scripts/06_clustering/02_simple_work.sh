@@ -9,10 +9,10 @@
 #$ -o logs/06_clustering/clustering.out
 #$ -e logs/06_clustering/clustering.err
 
-PLACE="03_tokyo"
+PLACE="07_osaka"
 YEAR="2019"
 
-# INPUT_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly"
+# INPUT_DIR="$DATA_DIR/processed/09_04_${PLACE}/${YEAR}_weekly"
 INPUT_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly"
 INPUT_FILES=(${INPUT_DIR}/*nonwalk.csv.gz)
 

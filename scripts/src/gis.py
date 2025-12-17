@@ -23,7 +23,7 @@ os.environ.setdefault("SHAPE_RESTORE_SHX", "YES")
 def division_several_file(files):
     split_idx = files.index('--')
     # log_message(f"{split_idx}", log_path)
-    file, gis_file, rail_file = files[:split_idx], files[split_idx + 1], files[-1]
+    file, gis_file, rail_file, bus_stop_file, train_stop_file = files[:split_idx], files[split_idx + 1], files[-3], files[-2], files[-1]
     path_parts = file[0].split("/")
     # log_message(f"{path_parts}", log_path)
     place = '_'.join(path_parts[-3].split('_')[-2:])
@@ -36,8 +36,17 @@ def division_several_file(files):
     rail_df = gpd.read_file(rail_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
     rail_gdf = rail_df.set_crs(epsg=4326)
     rail_gdf = rail_gdf.to_crs(epsg=32652)
+
+    bus_stop_df = gpd.read_file(bus_stop_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
+    bus_stop_gdf = bus_stop_df.set_crs(epsg=4326)
+    bus_stop_gdf = bus_stop_gdf.to_crs(epsg=32652)
+
+    train_stop_df = gpd.read_file(train_stop_file, encoding='cp932', config_options={"SHAPE_RESTORE_SHX": "YES"})
+    train_stop_gdf = train_stop_df.set_crs(epsg=4326)
+    train_stop_gdf = train_stop_gdf.to_crs(epsg=32652)
+
     # log_message(f"{bus_gdf.head()}", log_path)
-    return bus_gdf, rail_gdf, file, year, place
+    return bus_gdf, rail_gdf, bus_stop_gdf, train_stop_gdf, file, year, place
 
 #2つの関連のないファイルを受け取ったとき
 def division_2file(files):
@@ -66,21 +75,7 @@ def division_2file(files):
     log_message(f"{gps_gdf["bus_frag"].value_counts()}", log_path)
     return bus_gdf, gps_gdf, year, place
 
-#鉄道ネットワークを取得
-def train_from_OSM(target_place):
-    # 鉄道ネットワーク（鉄道 + 地下鉄 + ライトレール）取得
-    G = ox.graph_from_place(target_place, network_type='all_private',
-                            custom_filter='["railway"~"rail|subway|light_rail"]')
-    nodes, edges = ox.graph_to_gdfs(G)
-    train_gdf = edges.to_crs(epsg=32652)
-    return train_gdf
 
-def station_from_OSM(target_place):
-    tags_station = {"railway": "station"}
-    stations = ox.features_from_place(target_place, tags_station)
-    stations_points = stations[stations.geometry.type == "Point"]
-    stations_points_gdf = gpd.GeoDataFrame(stations_points, crs="EPSG:4326")
-    return stations_points_gdf
 
 #バッファーを作成
 def make_buffer(gdf, buffer_distance):
@@ -152,7 +147,7 @@ def _covers_flag(points_gdf, buffer_geom):
     return mask.astype(np.int64)
     # return points_gdf.geometry.apply(lambda geom: int(buffer_geom.covers(geom)))
 
-def make_features(gdf, *, threshold_train=1.0, threshold_bus=1.0):
+def make_features(gdf, bus_stops_gdf, train_stops_gdf, *, threshold_train=1.0, threshold_bus=1.0):
     group_cols = ['hashed_adid', 'segment_month_id']
 
     gdf = gdf.to_crs(epsg=4326)
@@ -210,6 +205,9 @@ def make_features(gdf, *, threshold_train=1.0, threshold_bus=1.0):
         .reset_index()
     )
 
+    bus_stop_df = stop_proximity_rate(gdf_enriched, bus_stops_gdf, 80, 'bus_stop_proximity_rate')
+    train_stop_df = stop_proximity_rate(gdf_enriched, train_stops_gdf, 500, 'train_stop_proximity_rate')
+
     gdf_features = gdf_enriched.groupby(group_cols)\
                         .agg(
                             # label           = ('label', 'first'),
@@ -231,6 +229,8 @@ def make_features(gdf, *, threshold_train=1.0, threshold_bus=1.0):
                         .reset_index()\
                         .merge(bcr, on=group_cols, how='left')\
                         .merge(stop_df, on=group_cols, how='left')\
+                        .merge(bus_stop_df, on=group_cols, how='left')\
+                        .merge(train_stop_df, on=group_cols, how='left')\
                         .assign(
                             bearing_change_rate = lambda x: x['bcr']/x["all_time"],
                             buffer_train = lambda x: (x['train_in_buffer'] / x['n_points']).fillna(0),
@@ -292,6 +292,8 @@ def make_features_walk(gdf):
                         )\
                         .reset_index()\
                         .assign(
+                            bus_stop_proximity_rate = "NaN",
+                            train_stop_proximity_rate = "NaN",
                             bearing_change_rate = "NaN",
                             stop_rate = "NaN",
                             buffer_train = "NaN",
@@ -429,3 +431,46 @@ def _segment_mbcr(df):
 
     # 合計をポイント数で割る
     return float(diffs.sum())
+
+
+
+def stop_proximity_rate(gdf_enriched,  stops_gdf, distance_threshold, proximity_col_name):
+    # 距離計算のためメートル単位の投影座標系に変換
+    # （世界共通でそこそこ使える Web Mercator）
+    gdf_low = gdf_enriched[gdf_enriched["speed_mps"] <= 1.0].copy()
+    
+    gdf_low_geo = gdf_low.set_geometry(gdf_low.geometry).to_crs(epsg=3857)
+    stops_3857 = stops_gdf.to_crs(epsg=3857)[["geometry"]]
+
+        # 最近傍 POI との距離を計算
+    low_with_nearest = gpd.sjoin_nearest(
+        gdf_low_geo,
+        stops_3857,
+        how="left",
+        distance_col="dist_to_poi"
+    )
+
+    # --- セグメント単位で集計 ---
+    agg_df = (
+        low_with_nearest
+        .groupby(["hashed_adid", "segment_month_id"])
+        .agg(
+            n_low_speed=("dist_to_poi", "size"),
+            n_near_poi=("dist_to_poi", lambda s: ((s.notna()) & (s <= distance_threshold)).sum()),
+        )
+        .assign(
+            **{
+                proximity_col_name: lambda x: (
+                    x["n_near_poi"]
+                    .div(x["n_low_speed"])
+                    .where((x["n_low_speed"] > 0) & (x["n_near_poi"] > 0), -1.0)
+                    .astype(float)
+                )
+            }
+        )
+        .drop(columns=["n_low_speed", "n_near_poi"])
+        .reset_index()
+    )
+
+
+    return agg_df
