@@ -176,7 +176,7 @@ plot_multi_band_with_reference(
     ref_title="Person Trip Survey",
     ref_mode_share_ja=ref_mode_non_holiday,
     savepath=os.path.join(OUT_DIR, "multi_band_non_holiday_rate_by_mode.png"),
-    figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
+    figsize=(4,4),  # 文字が詰まる場合は高さを調整
 )
 
 plot_multi_band_with_reference(
@@ -187,7 +187,7 @@ plot_multi_band_with_reference(
     ref_title="Person Trip Survey",
     ref_mode_share_ja=ref_mode_holiday,
     savepath=os.path.join(OUT_DIR, "multi_band_holiday_rate_by_mode.png"),
-    figsize=(10, 6.2),  # 文字が詰まる場合は高さを調整
+    figsize=(4,4),  # 文字が詰まる場合は高さを調整
 )
 
 holiday_rate = holiday_rate_by_mode.set_index("mode_label")

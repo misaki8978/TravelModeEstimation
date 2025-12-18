@@ -632,12 +632,132 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+def plot_multi_band_with_reference(
+    df,
+    value_cols,
+    *,
+    label_col="mode_label",
+    ref_title="パーソントリップ",
+    ref_mode_share_ja=None,
+    mode_label_map_ja2en=None,
+    titles=None,
+    pct_label_threshold=0.03,
+    figsize=(4, 6),
+    savepath=None,
+    color_map=None,
+    bar_width=0.3,       # 棒の幅
+    x_interval=0.5       # ★追加: 棒の中心間の距離（bar_widthより大きくする必要があります）
+):
+    # --- ラベル・データ準備（前回と同じ） ---
+    if mode_label_map_ja2en is None:
+        mode_label_map_ja2en = {"バス":"bus", "鉄道":"train", "二輪車":"bicycle", "徒歩・その他":"walk", "車":"car"}
+    mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
+
+    if ref_mode_share_ja is None:
+        ref_mode_share_ja = {"バス":1.3, "鉄道":2.2, "二輪車":8.1, "徒歩・その他":12.7, "車":75.7}
+
+    ref_total = sum(ref_mode_share_ja.values()) or 1.0
+    ref_items = []
+    ref_prop_dict = {}
+    for ja, v in ref_mode_share_ja.items():
+        en = mode_label_map_ja2en.get(ja, ja)
+        ratio = float(v) / ref_total
+        ref_items.append((en, ratio))
+        ref_prop_dict[en] = ratio
+    ref_items.sort(key=lambda x: x[1], reverse=True)
+    ref_order = [lab for lab, _ in ref_items]
+
+    if titles is None: titles = value_cols
+    
+    plot_data_list = []
+    plot_data_list.append({"title": ref_title, "props": ref_prop_dict})
+
+    for col, t in zip(value_cols, titles):
+        prop = dict.fromkeys(ref_order, 0.0)
+        sub = df[[label_col, col]].copy()
+        total = float(sub[col].sum())
+        if total > 0 and np.isfinite(total):
+            g = sub.groupby(label_col, as_index=False)[col].sum()
+            for _, row in g.iterrows():
+                lbl_str = str(row[label_col])
+                if lbl_str in prop: prop[lbl_str] = float(row[col]) / total
+        plot_data_list.append({"title": t, "props": prop})
+
+    # --- 描画処理 ---
+    fig, ax = plt.subplots(1, 1, figsize=figsize, constrained_layout=True)
+
+    # ★変更点: X軸の位置をインターバルに基づいて計算
+    # 例: x_interval=0.6 なら [0.0, 0.6, 1.2, ...] となる
+    x_positions = [i * x_interval for i in range(len(plot_data_list))]
+    
+    legend_handles = {}
+
+    for x_idx, data_info in zip(x_positions, plot_data_list):
+        props = data_info["props"]
+        bottom = 0.0 
+        
+        for lab in ref_order:
+            height = props.get(lab, 0.0)
+            if height <= 0: continue
+            
+            face = (color_map or {}).get(lab, None)
+            bar = ax.bar(x_idx, height, width=bar_width, bottom=bottom, 
+                         align="center", color=face, edgecolor="white", linewidth=0.5)
+            legend_handles[lab] = bar[0]
+
+            # --- 数値ラベルの表示制御 ---
+            label_text = f"{height*100:.1f}%"
+            
+            if height >= pct_label_threshold:
+                # しきい値以上なら「棒の中」に表示
+                ax.text(x_idx, bottom + height/2, label_text,
+                        ha="center", va="center", fontsize=10, fontweight="bold",
+                        color=_best_text_color(bar[0].get_facecolor()))
+            else:
+                # ★追加変更: しきい値未満なら「棒の右外側」に表示
+                # x位置: x_idx(棒の中心) + 棒の幅半分 + 少し余白(0.02)
+                text_x = x_idx + (bar_width / 2) + 0.02
+                text_y = bottom + height / 2
+                
+                # 色は視認性のため黒(black)を使用し、左揃え(ha="left")で配置
+                ax.text(text_x, text_y, label_text,
+                        ha="left", va="center", fontsize=9, fontweight="bold",
+                        color="black")
+
+            bottom += height
+
+    # --- 軸・凡例設定 ---
+    # ★変更点: 計算した x_positions を目盛りの位置として設定
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels([d["title"] for d in plot_data_list], fontsize=11)
+    
+    ax.set_ylim(0, 1)
+    yticks = [0, 0.25, 0.5, 0.75, 1.0]
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f"{int(t*100)}%" for t in yticks], fontsize=11)
+    
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+    handles = [legend_handles.get(lab) for lab in reversed(ref_order) if lab in legend_handles]
+    labels = [mode_label_map_en2ja.get(lab, lab) for lab in reversed(ref_order) if lab in legend_handles]
+    
+    if handles:
+        ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1), 
+                  title="交通手段", frameon=True)
+
+    if savepath:
+        os.makedirs(os.path.dirname(savepath), exist_ok=True)
+        plt.savefig(savepath, dpi=220, bbox_inches="tight")
+
 # def plot_multi_band_with_reference(
 #     df,
 #     value_cols,
 #     *,
 #     label_col="mode_label",
-#     ref_title="Person Trip Survey",
+#     ref_title="パーソントリップ",
 #     ref_mode_share_ja=None,   # {"バス":1.3,"鉄道":2.2,"自転車":8.1,"徒歩・その他":12.7,"車":75.7}
 #     mode_label_map_ja2en=None,
 #     titles=None,
@@ -645,9 +765,6 @@ import matplotlib.patches as mpatches
 #     figsize=(12, 6.5),
 #     savepath=None,
 #     color_map=None,
-#     legend_loc="lower right",     # 追加: レジェンド位置
-#     legend_ncol=1,                # 追加: レジェンド列数
-#     legend_bbox_to_anchor=(0.995, 0.02),  # 追加: 図全体の右下寄せ
 # ):
 #     # --- ラベル対応 ---
 #     if mode_label_map_ja2en is None:
@@ -662,74 +779,53 @@ import matplotlib.patches as mpatches
 #     mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
 
 #     if ref_mode_share_ja is None:
-#         ref_mode_share_ja = {"バス": 1.3, "鉄道": 2.2, "自転車": 8.1, "徒歩・その他": 12.7, "車": 75.7}
+#         ref_mode_share_ja = {"バス":1.3, "鉄道":2.2, "自転車":8.1, "徒歩・その他":12.7, "車":75.7}
 
 #     # --- PT調査：比率＆描画順（降順） ---
 #     ref_total = sum(ref_mode_share_ja.values()) or 1.0
 #     ref_items = []
 #     for ja, v in ref_mode_share_ja.items():
 #         en = mode_label_map_ja2en.get(ja, ja)
-#         ref_items.append((en, float(v) / ref_total))
+#         ref_items.append((en, float(v)/ref_total))
 #     ref_items.sort(key=lambda x: x[1], reverse=True)
 #     ref_order = [lab for lab, _ in ref_items]  # ← 以降この順
 
 #     # --- 図準備 ---
-#     # rows = 1 + len(value_cols)
-#     cols = 1 + len(value_cols)
+#     rows = 1 + len(value_cols)
 #     if titles is None:
 #         titles = value_cols
-#     # row_titles = [ref_title] + titles
-#     col_titles = [ref_title] + titles
+#     row_titles = [ref_title] + titles
 
-#     # fig, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True, constrained_layout=True)
-#     fig, axes = plt.subplots(1, cols, figsize=figsize, sharex=True, constrained_layout=True)
-#     # if rows == 1:
-#     #     axes = [axes]
-#     if cols == 1:
+#     fig, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True, constrained_layout=True)
+#     if rows == 1:
 #         axes = [axes]
 
-#     # xticks = [0, 0.25, 0.5, 0.75, 1.0]
-#     # xtlbls = [f"{int(t * 100)}%" for t in xticks]
-#     yticks = [0, 0.25, 0.5, 0.75, 1.0]
-#     ytlbls = [f"{int(t * 100)}%" for t in yticks]
+#     xticks = [0, 0.25, 0.5, 0.75, 1.0]
+#     xtlbls = [f"{int(t*100)}%" for t in xticks]
 
 #     # ---------- 1段目（PT調査） ----------
-#     # ax0 = axes[0]
 #     ax0 = axes[0]
 #     left = 0.0
 #     for lab, w in ref_items:
 #         face = (color_map or {}).get(lab, None)
-#         bar = ax0.bar(0, w, bottom="left", align="edge", color=face, width=1.0)
+#         bar = ax0.barh(0, w, left=left, align="edge", color=face, height=1.0)
 #         if w >= pct_label_threshold:
-#             ax0.text(
-#                 -0.05, left + w / 2,
-#                 f"{w * 100:.1f}%",
-#                 ha="center", va="center", fontsize=12, fontweight="bold",
-#                 rotation=90,
-#                 color=_best_text_color(bar[0].get_facecolor())
-#             )
+#             ja = mode_label_map_en2ja.get(lab, lab)
+#             ax0.text(left + w/2, 0,
+#                      f"{ja}: {w*100:.1f}%",
+#                      ha="center", va="top", fontsize=12, fontweight="bold",
+#                      color=_best_text_color(bar[0].get_facecolor()))
 #         left += w
 
-#     # ax0.set_xlim(0, 1)
-#     # ax0.set_ylim(-0.5, 0.5)
-#     # ax0.set_yticks([])
-#     # for s in ("left", "right", "top", "bottom"):
-#     #     ax0.spines[s].set_visible(False)
-#     ax0.set_ylim(0, 1)
-#     ax0.set_xlim(-0.5, 0.5)
-#     ax0.set_xticks(yticks)
-#     ax0.set_xticklabels(ytlbls)
-#     for s in ("left", "right", "top", "bottom"):
+#     ax0.set_xlim(0, 1); ax0.set_ylim(-0.5, 0.5); ax0.set_yticks([])
+#     for s in ("left","right","top","bottom"):
 #         ax0.spines[s].set_visible(False)
-
-#     # 行タイトル
-#     # ax0.text(-0.02, 0.75, row_titles[0], transform=ax0.transAxes,
-#     #          ha="right", va="center", fontsize=13)
-#     ax0.text(-0.02, 0.75, col_titles[0], transform=ax0.transAxes,
+#     # 行タイトル：帯の“中央”に
+#     ax0.text(-0.02, 0.75, row_titles[0], transform=ax0.transAxes,
 #              ha="right", va="center", fontsize=13)
 
 #     # ---------- 2段目以降 ----------
-#     for ax, value_col, rtitle in zip(axes[1:], value_cols, col_titles[1:]):
+#     for ax, value_col, rtitle in zip(axes[1:], value_cols, row_titles[1:]):
 #         # ラベル→値の合計→比率
 #         prop = dict.fromkeys(ref_order, 0.0)
 #         sub = df[[label_col, value_col]].copy()
@@ -745,184 +841,34 @@ import matplotlib.patches as mpatches
 #             if w <= 0:
 #                 continue
 #             face = (color_map or {}).get(lab, None)
-#             bar = ax.bar(0, w, bottom="left", align="edge", color=face, width=1.0)
+#             bar = ax.barh(0, w, left=left, align="edge", color=face, height=1.0)
 #             if w >= pct_label_threshold:
-#                 ax.text(
-#                     -0.05, left + w / 2,
-#                     f"{w * 100:.1f}%",
-#                     ha="center", va="center", fontsize=12, fontweight="bold",
-#                     rotation=90,
-#                     color=_best_text_color(bar[0].get_facecolor())
-#                 )
-#             bottom += w
+#                 ja = mode_label_map_en2ja.get(lab, lab)
+#                 ax.text(left + w/2, 0,
+#                         f"{ja}: {w*100:.1f}%",
+#                         ha="center", va="top", fontsize=12, fontweight="bold",
+#                         color=_best_text_color(bar[0].get_facecolor()))
+#             left += w
 
-#         # ax.set_xlim(0, 1)
-#         # ax.set_ylim(-0.5, 0.5)
-#         # ax.set_yticks([])
-#         # for s in ("left", "right", "top", "bottom"):
-#         #     ax.spines[s].set_visible(False)
-#         ax.set_ylim(0, 1)
-#         ax.set_xlim(-0.5, 0.5)
-#         ax.set_xticks([])
-#         for s in ("left", "right", "top", "bottom"):
+#         ax.set_xlim(0, 1); ax.set_ylim(-0.5, 0.5); ax.set_yticks([])
+#         for s in ("left","right","top","bottom"):
 #             ax.spines[s].set_visible(False)
-
-#         # 行タイトル
-#         # ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
-#         #         ha="right", va="center", fontsize=13)
+#         # 行タイトル：中央に
 #         ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
 #                 ha="right", va="center", fontsize=13)
 
 #     # x 目盛は最下段のみ
-#     # for ax in axes[:-1]:
-#     #     ax.set_xticks([])
-#     # axes[-1].set_xticks(yticks)
-#     # axes[-1].set_xticklabels(ytlbls, fontsize=11)
 #     for ax in axes[:-1]:
-#         ax.set_yticks([])
-#     axes[-1].set_yticks(yticks)
-#     axes[-1].set_yticklabels(ytlbls, fontsize=11)
+#         ax.set_xticks([])
+#     axes[-1].set_xticks(xticks)
+#     axes[-1].set_xticklabels(xtlbls, fontsize=11)
 
-#     # ---------- レジェンド（図全体の右下） ----------
-#     handles = []
-#     for lab in ref_order:
-#         face = (color_map or {}).get(lab, None)
-#         # ja = mode_label_map_en2ja.get(lab, lab)
-#         handles.append(mpatches.Patch(facecolor=face, edgecolor="none", label=lab))
-#     # 追加：帯グラフ間の縦余白を調整
-#     fig.subplots_adjust(hspace=0.03)
-#     fig.legend(
-#         handles=handles,
-#         loc=legend_loc,
-#         bbox_to_anchor=legend_bbox_to_anchor,
-#         ncol=legend_ncol,
-#         frameon=False,
-#         fontsize=11,
-#     )
+#     # axes.set_title(value_cols[0], fontsize=13)
+
 
 #     if savepath:
 #         os.makedirs(os.path.dirname(savepath), exist_ok=True)
-#         plt.savefig(savepath, dpi=220, bbox_inches="tight")
-
-#     return fig, axes
-
-def plot_multi_band_with_reference(
-    df,
-    value_cols,
-    *,
-    label_col="mode_label",
-    ref_title="パーソントリップ",
-    ref_mode_share_ja=None,   # {"バス":1.3,"鉄道":2.2,"自転車":8.1,"徒歩・その他":12.7,"車":75.7}
-    mode_label_map_ja2en=None,
-    titles=None,
-    pct_label_threshold=0.02,
-    figsize=(12, 6.5),
-    savepath=None,
-    color_map=None,
-):
-    # --- ラベル対応 ---
-    if mode_label_map_ja2en is None:
-        mode_label_map_ja2en = {
-            "バス": "bus",
-            "鉄道": "train",
-            "二輪車": "bicycle",
-            "徒歩・その他": "walk",
-            "車": "car",
-        }
-    # 逆引き（英→日）
-    mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
-
-    if ref_mode_share_ja is None:
-        ref_mode_share_ja = {"バス":1.3, "鉄道":2.2, "自転車":8.1, "徒歩・その他":12.7, "車":75.7}
-
-    # --- PT調査：比率＆描画順（降順） ---
-    ref_total = sum(ref_mode_share_ja.values()) or 1.0
-    ref_items = []
-    for ja, v in ref_mode_share_ja.items():
-        en = mode_label_map_ja2en.get(ja, ja)
-        ref_items.append((en, float(v)/ref_total))
-    ref_items.sort(key=lambda x: x[1], reverse=True)
-    ref_order = [lab for lab, _ in ref_items]  # ← 以降この順
-
-    # --- 図準備 ---
-    rows = 1 + len(value_cols)
-    if titles is None:
-        titles = value_cols
-    row_titles = [ref_title] + titles
-
-    fig, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True, constrained_layout=True)
-    if rows == 1:
-        axes = [axes]
-
-    xticks = [0, 0.25, 0.5, 0.75, 1.0]
-    xtlbls = [f"{int(t*100)}%" for t in xticks]
-
-    # ---------- 1段目（PT調査） ----------
-    ax0 = axes[0]
-    left = 0.0
-    for lab, w in ref_items:
-        face = (color_map or {}).get(lab, None)
-        bar = ax0.barh(0, w, left=left, align="edge", color=face, height=1.0)
-        if w >= pct_label_threshold:
-            ja = mode_label_map_en2ja.get(lab, lab)
-            ax0.text(left + w/2, 0,
-                     f"{ja}: {w*100:.1f}%",
-                     ha="center", va="top", fontsize=12, fontweight="bold",
-                     color=_best_text_color(bar[0].get_facecolor()))
-        left += w
-
-    ax0.set_xlim(0, 1); ax0.set_ylim(-0.5, 0.5); ax0.set_yticks([])
-    for s in ("left","right","top","bottom"):
-        ax0.spines[s].set_visible(False)
-    # 行タイトル：帯の“中央”に
-    ax0.text(-0.02, 0.75, row_titles[0], transform=ax0.transAxes,
-             ha="right", va="center", fontsize=13)
-
-    # ---------- 2段目以降 ----------
-    for ax, value_col, rtitle in zip(axes[1:], value_cols, row_titles[1:]):
-        # ラベル→値の合計→比率
-        prop = dict.fromkeys(ref_order, 0.0)
-        sub = df[[label_col, value_col]].copy()
-        total = float(sub[value_col].sum())
-        if total > 0 and np.isfinite(total):
-            g = sub.groupby(label_col, as_index=False)[value_col].sum()
-            for _, row in g.iterrows():
-                prop[str(row[label_col])] = float(row[value_col]) / total
-
-        left = 0.0
-        for lab in ref_order:
-            w = prop.get(lab, 0.0)
-            if w <= 0:
-                continue
-            face = (color_map or {}).get(lab, None)
-            bar = ax.barh(0, w, left=left, align="edge", color=face, height=1.0)
-            if w >= pct_label_threshold:
-                ja = mode_label_map_en2ja.get(lab, lab)
-                ax.text(left + w/2, 0,
-                        f"{ja}: {w*100:.1f}%",
-                        ha="center", va="top", fontsize=12, fontweight="bold",
-                        color=_best_text_color(bar[0].get_facecolor()))
-            left += w
-
-        ax.set_xlim(0, 1); ax.set_ylim(-0.5, 0.5); ax.set_yticks([])
-        for s in ("left","right","top","bottom"):
-            ax.spines[s].set_visible(False)
-        # 行タイトル：中央に
-        ax.text(-0.02, 0.75, rtitle, transform=ax.transAxes,
-                ha="right", va="center", fontsize=13)
-
-    # x 目盛は最下段のみ
-    for ax in axes[:-1]:
-        ax.set_xticks([])
-    axes[-1].set_xticks(xticks)
-    axes[-1].set_xticklabels(xtlbls, fontsize=11)
-
-    # axes.set_title(value_cols[0], fontsize=13)
-
-
-    if savepath:
-        os.makedirs(os.path.dirname(savepath), exist_ok=True)
-        plt.savefig(savepath, dpi=220, bbox_inches="tight")    
+#         plt.savefig(savepath, dpi=220, bbox_inches="tight")    
 
 
 
