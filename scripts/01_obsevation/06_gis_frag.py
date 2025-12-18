@@ -19,49 +19,49 @@ warnings.filterwarnings('ignore')
 
 files = sys.argv[1:]
 
-# YEAR = files[0].split("/")[-2]
-# PLACE = files[0].split("/")[-3].split("_")[-2:]
-# PLACE = "_".join(PLACE)
-YEAR = files[0].split("/")[-3]
-PLACE = files[0].split("/")[-4].split("_")[-2:]
+YEAR = files[0].split("/")[-2]
+PLACE = files[0].split("/")[-3].split("_")[-2:]
 PLACE = "_".join(PLACE)
-version = files[0].split("/")[-2]
+# YEAR = files[0].split("/")[-3]
+# PLACE = files[0].split("/")[-4].split("_")[-2:]
+# PLACE = "_".join(PLACE)
+# version = files[0].split("/")[-2]
 # log_message(f"{PLACE}", message_path)
-OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag/{version}"
-OUT_DIR_DATA = f"/home/data/fukui/processed/01_observation/{YEAR}/{version}"
-LOG_DIR = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/{version}"
-# OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag/pre"
-# OUT_DIR_DATA = f"/home/data/fukui/processed/01_observation/{YEAR}/pre"
-# LOG_DIR = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/pre"
+# OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag/{version}"
+# OUT_DIR_DATA = f"/home/data/fukui/processed/01_observation/{YEAR}/{version}"
+# LOG_DIR = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/{version}"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/{PLACE}/{YEAR}/06_gis_frag/pre"
+OUT_DIR_DATA = f"/home/data/fukui/processed/01_observation/{YEAR}/pre"
+LOG_DIR = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/pre"
 os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(OUT_DIR_DATA, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 #結果を見て適宜変更
 
-message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/{version}/06_gis_frag.txt"
+message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/01_obsevation/{PLACE}_{YEAR}/pre/06_gis_frag.txt"
 
 walk_cluster_col = {
    "-1": "walk"
 }
 train_cluster_col = {
    "-1": "walk", 
-   "0": "bus", 
-   "1": "train", 
-   "2": "bicycle", 
-   "3": "car",
+   "0": "car", 
+   "1": "bus", 
+   "2": "train", 
+   "3": "bicycle",
    "4": "bike"
    }
 bus_cluster_col = {
    "-1": "walk", 
-   "0": "bus", 
-   "1": "car", 
-   "2": "bicycle",
+   "0": "car", 
+   "1": "bicycle", 
+   "2": "bus",
    "3": "train"
    }
 other_cluster_col = {
    "-1": "walk", 
-   "0": "bicycle", 
-   "1": "car",
+   "0": "car", 
+   "1": "bicycle",
    "2": "bike"
    }
 mode_color = {
@@ -83,12 +83,12 @@ mode_marker = {
 }
 
 # 地方都市 H27ver.
-# ref_mode_non_holiday={"bus":3.1, "train":4.3, "bicycle":16.1, "walk":17.8, "car":58.6} #平日
-# ref_mode_holiday={"bus":1.7, "train":2.6, "bicycle":11.1, "walk":12.5, "car":72.1} #休日
+ref_mode_non_holiday={"bus":3.1, "train":4.3, "bicycle":16.1, "walk":17.8, "car":58.6} #平日
+ref_mode_holiday={"bus":1.7, "train":2.6, "bicycle":11.1, "walk":12.5, "car":72.1} #休日
 
 # 三大都市圏 H27ver.
-ref_mode_non_holiday={"バス":2.3, "鉄道":28.5, "二輪車":16.3, "徒歩・その他":21.5, "車":31.4} #平日
-ref_mode_holiday={"バス":2.0, "鉄道":16.3, "二輪車":12.3, "徒歩・その他":18.8, "車":50.6} #休日
+# ref_mode_non_holiday={"バス":2.3, "鉄道":28.5, "二輪車":16.3, "徒歩・その他":21.5, "車":31.4} #平日
+# ref_mode_holiday={"バス":2.0, "鉄道":16.3, "二輪車":12.3, "徒歩・その他":18.8, "車":50.6} #休日
 
 df_list = []
 for file in files:

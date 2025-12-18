@@ -729,12 +729,12 @@ def plot_multi_band_with_reference(
     # --- 軸・凡例設定 ---
     # ★変更点: 計算した x_positions を目盛りの位置として設定
     ax.set_xticks(x_positions)
-    ax.set_xticklabels([d["title"] for d in plot_data_list], fontsize=11)
+    ax.set_xticklabels([d["title"] for d in plot_data_list], fontsize=9)
     
     ax.set_ylim(0, 1)
     yticks = [0, 0.25, 0.5, 0.75, 1.0]
     ax.set_yticks(yticks)
-    ax.set_yticklabels([f"{int(t*100)}%" for t in yticks], fontsize=11)
+    ax.set_yticklabels([f"{int(t*100)}%" for t in yticks], fontsize=9)
     
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -742,11 +742,11 @@ def plot_multi_band_with_reference(
     ax.grid(axis='y', linestyle='--', alpha=0.5)
 
     handles = [legend_handles.get(lab) for lab in reversed(ref_order) if lab in legend_handles]
-    labels = [mode_label_map_en2ja.get(lab, lab) for lab in reversed(ref_order) if lab in legend_handles]
+    labels = [lab for lab in reversed(ref_order) if lab in legend_handles]
     
     if handles:
         ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1), 
-                  title="交通手段", frameon=True)
+                  title="Transportation Mode", frameon=True)
 
     if savepath:
         os.makedirs(os.path.dirname(savepath), exist_ok=True)
