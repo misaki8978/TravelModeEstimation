@@ -26,7 +26,7 @@ v = 1.8             # 速度の閾値 (m/s)
 a = 0.6             # 加速度の閾値 (m/s^2)
 dist1 = 10          # short セグメントと判定する距離 (m)
 dist2 = 50         # uncertain/certain 判定用距離 (m)
-limit = 4           # uncertain セグメント連続回数の閾値
+limit = 3           # uncertain セグメント連続回数の閾値
 
 
 

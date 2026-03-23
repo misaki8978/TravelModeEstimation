@@ -59,6 +59,7 @@ def process_chunk(
     weekly_filter: pd.DataFrame
 ):
     df = pd.read_csv(f, compression="gzip")\
+        .query('accuracy <= 100')\
         .loc[lambda x: x['hashed_adid'].notna()]\
         .assign(
             datetime=lambda x: pd.to_datetime(x['datetime'], errors='coerce'),

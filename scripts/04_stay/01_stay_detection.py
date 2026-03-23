@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # log_message(f"files: {files}", message_path)
 
     # OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/hariharan"
-    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/gpt"
+    OUT_DIR = f"/home/data/fukui/interim/multithread/04_01_{place}_{year}/new"
     os.makedirs(OUT_DIR, exist_ok=True)
 
 

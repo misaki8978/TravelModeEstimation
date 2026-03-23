@@ -398,60 +398,87 @@ def plot_speed_comparison(speed_df_hikaku, OUT_DIR):
 
 
 #segmentのlabelをuserごとに比率にして可視化
-def plot_ratio_by_user(df, OUT_DIR,):
-    # user_counts = (
-    #                 df.groupby(['hashed_adid', 'is_walk'])
-    #                 .size()
-    #                 .unstack(fill_value=0)
-    #                 .reset_index()
-    #                 )
+def plot_ratio_by_user(df, OUT_DIR):
+    # log_message(f"{df.columns}", message_path)
     user_counts = (
-                    df.groupby(['hashed_adid', 'label'])
+                    df.groupby(['hashed_adid', 'is_walk'])
                     .size()
                     .unstack(fill_value=0)
                     .reset_index()
                     )
-    log_message(f"{user_counts['label']}", message_path)
+    log_message(f"{user_counts}", message_path)
     # 歩行・非歩行の比率を求める
-    # user_counts['walk_ratio'] = user_counts['1'] / (user_counts['1'] + user_counts['0'])
-    # user_counts['non_walk_ratio'] = user_counts['0'] / (user_counts['1'] + user_counts['0'])
-    user_counts['walk_ratio'] = user_counts['walk'] / (user_counts['walk'] + user_counts['non-walk'])
-    user_counts['non_walk_ratio'] = user_counts['non-walk'] / (user_counts['walk'] + user_counts['non-walk'])
+    user_counts['walk_ratio'] = user_counts[1] / (user_counts[1] + user_counts[0])
+    user_counts['non_walk_ratio'] = user_counts[0] / (user_counts[1] + user_counts[0])
 
     # ソート（オプション：徒歩比率の高い順など）
     user_counts_sorted = user_counts.sort_values('walk_ratio').reset_index(drop=True)
-    # 各ユーザーごとの合計ポイント数
-    point_counts = df.groupby('hashed_adid')['n_points'].sum().reset_index()
-    point_counts.rename(columns={'n_points': 'total_points'}, inplace=True)
+    weekly_user_counts = (
+        df.groupby(['hashed_adid', 'week_start'])
+        .size()
+        .reset_index(name='count_per_week')
+    )
+    avg_points_per_week = (
+        weekly_user_counts.groupby('hashed_adid')['count_per_week']
+        .mean()
+        .reset_index(name='avg_weekly_segment')
+    )
 
     # user_counts_sorted に結合（walk_ratio順で整列済み）
-    merged_df = user_counts_sorted.merge(point_counts, on='hashed_adid')
+    merged_df = user_counts_sorted.reset_index().merge(avg_points_per_week, on='hashed_adid')
     
     x = np.arange(len(merged_df))
 
-    fig, ax1 = plt.subplots(figsize=(14, 6))
+    # fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # 左軸：walk / non-walk 比率（積み上げ棒）
-    ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
-    ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
-    ax1.set_ylabel('Ratio', fontsize=17)
-    ax1.set_ylim(0, 1)
-    ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
-    ax1.tick_params(axis='x', labelsize=16)
-    ax1.tick_params(axis='y', labelsize=16)
-    ax1.legend(loc='upper left', fontsize=17)
-    ax1.grid(True, axis='y')
+    # # 左軸：walk / non-walk 比率（積み上げ棒）
+    # ax1.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
+    # ax1.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
+    # ax1.set_ylabel('Ratio', fontsize=17)
+    # ax1.set_ylim(0, 1)
+    # ax1.set_xlabel('User Index (sorted by walk ratio)', fontsize=17)
+    # ax1.tick_params(axis='x', labelsize=16)
+    # ax1.tick_params(axis='y', labelsize=16)
+    # ax1.legend(loc='upper left', fontsize=17)
+    # ax1.grid(True, axis='y')
 
-    # 右軸：n_point の合計を折れ線で
+    # # 右軸：1週間平均データ数（散布図）
+    # ax2 = ax1.twinx()
+    # ax2.scatter(x, merged_df['avg_weekly_segment'], color='black', label='Avg Weekly Segment', s=20, zorder=3)
+    
+    # ax2.set_ylabel('Avg Segment / Week', fontsize=17)
+    # # 必要に応じて上限を調整
+    # # ax2.set_ylim(0, merged_df['avg_weekly_points'].max() * 1.1) 
+    # ax2.legend(loc='upper right', fontsize=17)
+
+    ### 軸を左右交換したバージョン
+    fig, ax1 = plt.subplots(figsize=(10, 6))
     ax2 = ax1.twinx()
-    ax2.scatter(x, merged_df['total_points'], label='Total Points', color='black', linestyle='--', marker='o')
-    ax2.set_ylabel('Total Points', fontsize=17)
-    ax2.tick_params(axis='y', labelsize=16)
-    ax2.legend(loc='upper right', fontsize=17)
+    
+    # 右軸：walk / non-walk 比率（積み上げ棒）
+    ax2.bar(x, merged_df['walk_ratio'], label='Walk Ratio', color='skyblue')
+    ax2.bar(x, merged_df['non_walk_ratio'], bottom=merged_df['walk_ratio'], label='Non-Walk Ratio', color='salmon')
+    ax2.set_ylabel('Ratio', fontsize=14)
+    ax2.set_ylim(0, 1)
+    ax2.set_xlabel('User Index (sorted by walk ratio)', fontsize=14)
+    ax2.tick_params(axis='x', labelsize=14)
+    ax2.tick_params(axis='y', labelsize=14)
+    ax2.legend(loc='upper right', fontsize=14)
+    ax2.grid(True, axis='y')
 
+    # 左軸：1週間平均データ数（散布図）
+    ax1.scatter(x, merged_df['avg_weekly_segment'], color='black', label='Avg Weekly Segment', s=20, zorder=3)
+    
+    ax1.set_ylabel('Avg Segment / Week', fontsize=14)
+    # 必要に応じて上限を調整
+    # ax2.set_ylim(0, merged_df['avg_weekly_points'].max() * 1.1) 
+    ax1.legend(loc='upper left', fontsize=14) 
+    ### 
+    ax1.set_zorder(ax2.get_zorder() + 1)
+    ax1.patch.set_visible(False) # 背景を透明にしないと後ろの棒グラフが見えなくなります
     # plt.title('Walk/Non-Walk Ratio and Total Points per User', fontsize=17)
     plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}/ratio_by_user.png', dpi=300)
+    plt.savefig(f'{OUT_DIR}/ratio_by_user.png', dpi=1000)
 
 
 def plot_velocity_distribution_mode(seg_normal, OUT_DIR, color_map):
@@ -524,7 +551,7 @@ def plot_velocity_distribution_mode(seg_normal, OUT_DIR, color_map):
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     plt.savefig(f'{OUT_DIR}/velocity_distribution_mode.png', dpi=300)
 
-def plot_velocity_distribution_mode_bw(seg_normal, OUT_DIR, marker_map):
+def plot_velocity_distribution_mode_bw(seg_normal, OUT_DIR, marker_map, version):
     legend_fontsize = 15
     label_fontsize = 14
     tick_fontsize = 12
@@ -546,7 +573,7 @@ def plot_velocity_distribution_mode_bw(seg_normal, OUT_DIR, marker_map):
 
     def percentage_by_label(df, col_bin):
         return (
-            df.groupby([col_bin, 'mode_label'])
+            df.groupby([col_bin, f'mode_label_{version}'])
             .size()
             .unstack(fill_value=0)
             .apply(lambda x: 100 * x / x.sum(), axis=0)
@@ -605,15 +632,18 @@ def plot_velocity_distribution_mode_bw(seg_normal, OUT_DIR, marker_map):
     axes[2].legend(fontsize=legend_fontsize)
 
     plt.tight_layout(rect=(0, 0, 1, 0.96))
-    plt.savefig(f'{OUT_DIR}/velocity_distribution_mode_bw.png', dpi=300)
+    plt.savefig(f'{OUT_DIR}/{version}_velocity_distribution_mode_bw.png', dpi=300)
     plt.close()
 
 
-def mode_change(df, cluster_col, gis):
+def mode_change(df, cluster_col, gis, version):
     if gis == "other":
-        df['mode_label'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+    elif gis == "normal":
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+        df[f'mode_label_{version}_gis'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
     else:
-        df['mode_label'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
     return df
 
 
@@ -635,22 +665,25 @@ import matplotlib.patches as mpatches
 def plot_multi_band_with_reference(
     df,
     value_cols,
+    # version,
     *,
     label_col="mode_label",
     ref_title="パーソントリップ",
     ref_mode_share_ja=None,
     mode_label_map_ja2en=None,
     titles=None,
-    pct_label_threshold=0.03,
-    figsize=(4, 6),
+    pct_label_threshold=0.02,
+    figsize=(6, 6),
     savepath=None,
     color_map=None,
     bar_width=0.3,       # 棒の幅
     x_interval=0.5       # ★追加: 棒の中心間の距離（bar_widthより大きくする必要があります）
 ):
+
+    # mode_label = label_col + "_" + version
     # --- ラベル・データ準備（前回と同じ） ---
     if mode_label_map_ja2en is None:
-        mode_label_map_ja2en = {"バス":"bus", "鉄道":"train", "二輪車":"bicycle", "徒歩・その他":"walk", "車":"car"}
+        mode_label_map_ja2en = {"バス":"bus", "鉄道":"train", "二輪車":"two-wheeler", "徒歩・その他":"walk", "車":"car"}
     mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
 
     if ref_mode_share_ja is None:
@@ -674,14 +707,165 @@ def plot_multi_band_with_reference(
 
     for col, t in zip(value_cols, titles):
         prop = dict.fromkeys(ref_order, 0.0)
-        sub = df[[label_col, col]].copy()
-        total = float(sub[col].sum())
+
+        # sub[col] が Series でも DataFrame でも扱えるようにする
+        sub = df[[label_col]].copy()
+        col_obj = df[col]
+
+        if isinstance(col_obj, pd.DataFrame):
+            # 複数列扱いになっている場合は行方向に合算して1列に潰す
+            sub["_value_"] = pd.to_numeric(col_obj.sum(axis=1), errors="coerce")
+        else:
+            sub["_value_"] = pd.to_numeric(col_obj, errors="coerce")
+
+        total = float(sub["_value_"].sum())
+
         if total > 0 and np.isfinite(total):
-            g = sub.groupby(label_col, as_index=False)[col].sum()
+            g = sub.groupby(label_col, as_index=False)["_value_"].sum()
             for _, row in g.iterrows():
                 lbl_str = str(row[label_col])
-                if lbl_str in prop: prop[lbl_str] = float(row[col]) / total
+                if lbl_str in prop:
+                    prop[lbl_str] = float(row["_value_"]) / total
+
         plot_data_list.append({"title": t, "props": prop})
+
+
+    # --- 描画処理 ---
+    fig, ax = plt.subplots(1, 1, figsize=figsize, constrained_layout=True)
+
+    # ★変更点: X軸の位置をインターバルに基づいて計算
+    # 例: x_interval=0.6 なら [0.0, 0.6, 1.2, ...] となる
+    x_positions = [i * x_interval for i in range(len(plot_data_list))]
+    
+    legend_handles = {}
+
+    for x_idx, data_info in zip(x_positions, plot_data_list):
+        props = data_info["props"]
+        bottom = 0.0 
+        
+        for lab in ref_order:
+            height = props.get(lab, 0.0)
+            if height <= 0: continue
+            
+            face = (color_map or {}).get(lab, None)
+            bar = ax.bar(x_idx, height, width=bar_width, bottom=bottom, 
+                         align="center", color=face, edgecolor="white", linewidth=0.5)
+            legend_handles[lab] = bar[0]
+
+            # --- 数値ラベルの表示制御 ---
+            label_text = f"{height*100:.1f}%"
+            
+            if height >= pct_label_threshold:
+                # しきい値以上なら「棒の中」に表示
+                ax.text(x_idx, bottom + height/2, label_text,
+                        ha="center", va="center", fontsize=10, fontweight="bold",
+                        color=_best_text_color(bar[0].get_facecolor()))
+            else:
+                # ★追加変更: しきい値未満なら「棒の右外側」に表示
+                # x位置: x_idx(棒の中心) + 棒の幅半分 + 少し余白(0.02)
+                text_x = x_idx + (bar_width / 2) + 0.02
+                text_y = bottom + height / 2
+                
+                # 色は視認性のため黒(black)を使用し、左揃え(ha="left")で配置
+                ax.text(text_x, text_y, label_text,
+                        ha="left", va="center", fontsize=9, fontweight="bold",
+                        color="black")
+
+            bottom += height
+
+    # --- 軸・凡例設定 ---
+    # ★変更点: 計算した x_positions を目盛りの位置として設定
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels([d["title"] for d in plot_data_list], fontsize=12, rotation=45)
+    
+    ax.set_ylim(0, 1)
+    yticks = [0, 0.25, 0.5, 0.75, 1.0]
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f"{int(t*100)}%" for t in yticks], fontsize=9)
+    
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+    handles = [legend_handles.get(lab) for lab in reversed(ref_order) if lab in legend_handles]
+    labels = [lab for lab in reversed(ref_order) if lab in legend_handles]
+    
+    if handles:
+        ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1), 
+                  title="Transportation Mode", frameon=True)
+
+    if savepath:
+        os.makedirs(os.path.dirname(savepath), exist_ok=True)
+        plt.savefig(savepath, dpi=220, bbox_inches="tight")
+
+def plot_multi_band_with_reference_version(
+    df,
+    value_cols,
+    version,
+    *,
+    label_col="mode_label",
+    ref_title="パーソントリップ",
+    ref_mode_share_ja=None,
+    mode_label_map_ja2en=None,
+    titles=None,
+    pct_label_threshold=0.03,
+    figsize=(6, 6),
+    savepath=None,
+    color_map=None,
+    bar_width=0.3,       # 棒の幅
+    x_interval=0.5       # ★追加: 棒の中心間の距離（bar_widthより大きくする必要があります）
+):
+
+    mode_label = label_col + "_" + version
+    # --- ラベル・データ準備（前回と同じ） ---
+    if mode_label_map_ja2en is None:
+        mode_label_map_ja2en = {"バス":"bus", "鉄道":"train", "二輪車":"two-wheeler", "徒歩・その他":"walk", "車":"car"}
+    mode_label_map_en2ja = {v: k for k, v in mode_label_map_ja2en.items()}
+
+    if ref_mode_share_ja is None:
+        ref_mode_share_ja = {"バス":1.3, "鉄道":2.2, "二輪車":8.1, "徒歩・その他":12.7, "車":75.7}
+
+    ref_total = sum(ref_mode_share_ja.values()) or 1.0
+    ref_items = []
+    ref_prop_dict = {}
+    for ja, v in ref_mode_share_ja.items():
+        en = mode_label_map_ja2en.get(ja, ja)
+        ratio = float(v) / ref_total
+        ref_items.append((en, ratio))
+        ref_prop_dict[en] = ratio
+    ref_items.sort(key=lambda x: x[1], reverse=True)
+    ref_order = [lab for lab, _ in ref_items]
+
+    if titles is None: titles = value_cols
+    
+    plot_data_list = []
+    plot_data_list.append({"title": ref_title, "props": ref_prop_dict})
+
+    for col, t in zip(value_cols, titles):
+        prop = dict.fromkeys(ref_order, 0.0)
+
+        # sub[col] が Series でも DataFrame でも扱えるようにする
+        sub = df[[mode_label]].copy()
+        col_obj = df[col]
+
+        if isinstance(col_obj, pd.DataFrame):
+            # 複数列扱いになっている場合は行方向に合算して1列に潰す
+            sub["_value_"] = pd.to_numeric(col_obj.sum(axis=1), errors="coerce")
+        else:
+            sub["_value_"] = pd.to_numeric(col_obj, errors="coerce")
+
+        total = float(sub["_value_"].sum())
+
+        if total > 0 and np.isfinite(total):
+            g = sub.groupby(mode_label, as_index=False)["_value_"].sum()
+            for _, row in g.iterrows():
+                lbl_str = str(row[mode_label])
+                if lbl_str in prop:
+                    prop[lbl_str] = float(row["_value_"]) / total
+
+        plot_data_list.append({"title": t, "props": prop})
+
 
     # --- 描画処理 ---
     fig, ax = plt.subplots(1, 1, figsize=figsize, constrained_layout=True)
@@ -872,11 +1056,11 @@ def plot_multi_band_with_reference(
 
 
 
-def plot_mode_analysis(df, OUT_DIR, color_map):
+def plot_mode_analysis(df, OUT_DIR, color_map, version):
     df = df.reset_index(drop=True)
     fig, axes = plt.subplots(2, 3, figsize=(10, 10))
     # (1) walk / non‑walk の本数（All）
-    count = df['mode_label'].value_counts()
+    count = df[f'mode_label_{version}'].value_counts()
     labels_order = count.index.tolist()
     log_message(", ".join(map(str, labels_order)), message_path)
     sns.barplot(
@@ -888,10 +1072,10 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[0, 0].set_title('Segments Count', fontsize=15)
     axes[0, 0].set_xlabel('Label', fontsize=13)
     axes[0, 0].set_ylabel('Count', fontsize=13)
-    axes[0,0].tick_params(axis='x', labelsize=13)
+    axes[0,0].tick_params(axis='x', labelsize=12, rotation=35)
 
     #(2) 総セグメント時間
-    total_duration = df.groupby('mode_label')['all_time'].sum().reindex(labels_order, fill_value=0)
+    total_duration = df.groupby(f'mode_label_{version}')['all_time'].sum().reindex(labels_order, fill_value=0)
     sns.barplot(
         x=labels_order,
         y=total_duration.values,
@@ -901,13 +1085,13 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[0, 1].set_title('Total Duration', fontsize=15)
     axes[0, 1].set_xlabel('Label', fontsize=13)
     axes[0, 1].set_ylabel('Total Duration (sec)', fontsize=13)
-    axes[0, 1].tick_params(axis='x', labelsize=13)
+    axes[0, 1].tick_params(axis='x', labelsize=12, rotation=35)
     # axes[0, 1].bar_label(barplot.containers[0],  # バーオブジェクト
     #                     labels=[f'{v:.1f}' for v in total_duration.values],
     #                     padding=3)
 
     #(3)総セグメント距離
-    total_distance = df.groupby('mode_label')['all_distance'].sum().reindex(labels_order, fill_value=0)
+    total_distance = df.groupby(f'mode_label_{version}')['all_distance'].sum().reindex(labels_order, fill_value=0)
     sns.barplot(
         x=labels_order,
         y=total_distance.values,
@@ -917,7 +1101,7 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[0, 2].set_title('Total Distance', fontsize=15)
     axes[0, 2].set_xlabel('Label', fontsize=13)
     axes[0, 2].set_ylabel('Total Distance (m)', fontsize=13)
-    axes[0, 2].tick_params(axis='x', labelsize=13)
+    axes[0, 2].tick_params(axis='x', labelsize=12, rotation=35)
     # axes[1, 0].bar_label(barplot.containers[0],  # バーオブジェクト
     #                     labels=[f'{v:.1f}' for v in total_distance.values],
     #                     padding=3)
@@ -925,7 +1109,7 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     # (4) 平均速度 boxplot（All）
     sns.boxplot(
         data=df,
-        x='mode_label',
+        x=f'mode_label_{version}',
         y='mean_speed',
         ax=axes[1, 0],
         order=labels_order,
@@ -934,12 +1118,12 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[1, 0].set_title('Mean Velocity', fontsize=15)
     axes[1, 0].set_xlabel('Label', fontsize=13)
     axes[1, 0].set_ylabel('Mean Velocity(m/s)', fontsize=13)
-    axes[1, 0].tick_params(axis='x', labelsize=13)
+    axes[1, 0].tick_params(axis='x', labelsize=12, rotation=35)
 
     #(5) buffer_bus
     sns.boxplot(
         data=df,
-        x='mode_label',
+        x=f'mode_label_{version}',
         y='buffer_bus',
         ax=axes[1, 1],
         order=labels_order,
@@ -948,11 +1132,11 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[1, 1].set_title('Proximity Rate to Bus Route', fontsize=15)
     axes[1, 1].set_xlabel('Label', fontsize=13)
     axes[1, 1].set_ylabel('Proximity Rate to Bus Route', fontsize=13)
-    axes[1, 1].tick_params(axis='x', labelsize=13)
+    axes[1, 1].tick_params(axis='x', labelsize=12, rotation=35)
     #(6) buffer_train
     sns.boxplot(
         data=df,
-        x='mode_label',
+        x=f'mode_label_{version}',
         y='buffer_train',
         ax=axes[1, 2],
         order=labels_order,
@@ -961,46 +1145,87 @@ def plot_mode_analysis(df, OUT_DIR, color_map):
     axes[1, 2].set_title('Proximity Rate to Railway', fontsize=15)
     axes[1, 2].set_xlabel('Label', fontsize=13)
     axes[1, 2].set_ylabel('Proximity Rate to Railway ', fontsize=13)
-    axes[1, 2].tick_params(axis='x', labelsize=13)
+    axes[1, 2].tick_params(axis='x', labelsize=12, rotation=35)
     plt.tight_layout()
-    plt.savefig(f'{OUT_DIR}/mode_analysis.png', dpi=300)
+    plt.savefig(f'{OUT_DIR}/{version}_mode_analysis.png', dpi=300)
     plt.close()
 
+def all_analysis(df, OUT_DIR, mapping):
+    selected_cols = list(mapping.keys())
+    df = df.query("is_walk == 0 & max_speed <= 150")
+    target_df = df[selected_cols].rename(columns=mapping)
+    plt.figure(figsize=(4, 6))
+    sns.boxplot(data=target_df)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    # plt.ylim(1, 500000)
+    # plt.yscale("log")
+    # plt.title('Comparison of feature distributions')
+    plt.savefig(f'{OUT_DIR}/speed_analysis.png', dpi=300)
+    plt.close()
+    # return df
 
+def segment_mode(df, version):
+    if version == "normal":
+        df["date_only"] = df["date"].str[:10]
+        df["date_only"] = pd.to_datetime(df["date_only"])
+        df["weekday"] = df["date_only"].dt.weekday
 
-def segment_mode(df):
-    df["date_only"] = df["date"].str[:10]
-    df["date_only"] = pd.to_datetime(df["date_only"])
-    df["weekday"] = df["date_only"].dt.weekday
-
-    # 土日 or 祝日で休日フラグを立てる
-    df["is_holiday"] = (
-        (df["weekday"] >= 5) |  # 土日
-        (df["date_only"].apply(jpholiday.is_holiday))  # 祝日
-    )
-    df_move = df.groupby(["hashed_adid", "date_only"])\
-                     .agg(
-                        n_segments = ('move_id', 'nunique'),
-                        is_holiday = ('is_holiday', 'first')
-                     )
-    df_mode_represent = df.groupby(["hashed_adid", "date_only", "move_id"])\
-                          .agg(
-                            start_date = ('date', 'first'),
-                            end_date = ('date_max', 'last'),
-                            mode_list = ('mode_label', 'unique'),
+        # 土日 or 祝日で休日フラグを立てる
+        df["is_holiday"] = (
+            (df["weekday"] >= 5) |  # 土日
+            (df["date_only"].apply(jpholiday.is_holiday))  # 祝日
+        )
+        df_move = df.groupby(["hashed_adid", "date_only"])\
+                        .agg(
+                            n_segments = ('move_id', 'nunique'),
                             is_holiday = ('is_holiday', 'first')
-                          )\
-                          .assign(
-                            mode_represent = lambda x: x['mode_list'].apply(mode_represent)
-                          )
-    # 曜日（0=月曜, 6=日曜）
+                        )
+        df_mode_represent = df.groupby(["hashed_adid", "date_only", "move_id"])\
+                            .agg(
+                                start_date = ('date', 'first'),
+                                end_date = ('date_max', 'last'),
+                                mode_list_normal = (f'mode_label_{version}', 'unique'),
+                                mode_list_gis = (f'mode_label_{version}_gis', 'unique'),
+                                is_holiday = ('is_holiday', 'first')
+                            )\
+                            .assign(
+                                mode_represent = lambda x: x['mode_list_normal'].apply(mode_represent),
+                                mode_represent_gis = lambda x: x['mode_list_gis'].apply(mode_represent)
+                            )
+    else:
+        df["date_only"] = df["date"].str[:10]
+        df["date_only"] = pd.to_datetime(df["date_only"])
+        df["weekday"] = df["date_only"].dt.weekday
+
+        # 土日 or 祝日で休日フラグを立てる
+        df["is_holiday"] = (
+            (df["weekday"] >= 5) |  # 土日
+            (df["date_only"].apply(jpholiday.is_holiday))  # 祝日
+        )
+        df_move = df.groupby(["hashed_adid", "date_only"])\
+                        .agg(
+                            n_segments = ('move_id', 'nunique'),
+                            is_holiday = ('is_holiday', 'first')
+                        )
+        df_mode_represent = df.groupby(["hashed_adid", "date_only", "move_id"])\
+                            .agg(
+                                start_date = ('date', 'first'),
+                                end_date = ('date_max', 'last'),
+                                mode_list = (f'mode_label_{version}', 'unique'),
+                                is_holiday = ('is_holiday', 'first')
+                            )\
+                            .assign(
+                                mode_represent = lambda x: x['mode_list'].apply(mode_represent)
+                            )
+        # 曜日（0=月曜, 6=日曜）
 
 
     return df_move, df_mode_represent
 
 
 def mode_represent(list_mode):
-    yusen_mode =["train", "bus", "car", "bike", "bicycle", "walk"]
+    yusen_mode =["train", "bus", "car", "bike", "two-wheeler", "walk"]
     for i in range(len(yusen_mode)):
         if yusen_mode[i] in list_mode:
             return yusen_mode[i]

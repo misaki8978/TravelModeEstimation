@@ -9,7 +9,7 @@
 #$ -o logs/time_diff.out
 #$ -e logs/time_diff.err
 
-PLACE="03_tokyo"
+PLACE="09_nagasaki"
 YEAR="2019"
 
 FILTERED_DIR="$DATA_DIR/interim/filtered/${PLACE}/${YEAR}_weekly/user_counts_4500/sorted"

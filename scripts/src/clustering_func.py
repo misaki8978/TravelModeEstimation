@@ -1,3 +1,5 @@
+
+from __future__ import annotations
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -15,6 +17,15 @@ import plotly.express as px
 import plotly.graph_objs as go
 from sklearn.metrics import silhouette_score, silhouette_samples
 import matplotlib.cm as cm
+
+
+from pathlib import Path
+from typing import Optional, Sequence
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import geopandas as gpd
 sys.path.append("/home/fukui/workspace/TravelModeEstimation/scripts/src")
 from log_message import log_message
 
@@ -26,12 +37,12 @@ def data_sepa(df, buffer):
     # df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer} & buffer_bus < {buffer}")
     # df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer}")
     # df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
-    df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
-    df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
-    df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
-    # df_train = df.query(f"label == 'non-walk' & buffer_train >= {buffer}")
-    # df_bus = df.query(f"label == 'non-walk' & buffer_bus >= {buffer} & buffer_train < {buffer}")
-    # df_other = df.query(f"label == 'non-walk' & buffer_train < {buffer} & buffer_bus < {buffer}")
+    # df_train = df.query(f"is_walk == 0 & buffer_train >= {buffer}")
+    # df_bus = df.query(f"is_walk == 0 & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    # df_other = df.query(f"is_walk == 0 & buffer_train < {buffer} & buffer_bus < {buffer}")
+    df_train = df.query(f"label == 'non-walk' & buffer_train >= {buffer}")
+    df_bus = df.query(f"label == 'non-walk' & buffer_bus >= {buffer} & buffer_train < {buffer}")
+    df_other = df.query(f"label == 'non-walk' & buffer_train < {buffer} & buffer_bus < {buffer}")
     return df_train, df_bus, df_other
 
 def start_clustering(df, gis_feature_cols, feature_cols, n_clusters, OUT_DIR):
@@ -133,8 +144,8 @@ def fuzzy_clustering(df_clean, cols, OUT_DIR, gis, n_clusters):
     # df_target = df_target[df_target["bearing_change_rate"] != 0]
     # log_message(f"{df_all['label'].value_counts()}", message_path)
 
-    # df_target = df_all.query("label == 'non-walk'")
-    df_target = df_all.query("is_walk == 0")
+    df_target = df_all.query("label == 'non-walk'")
+    # df_target = df_all.query("is_walk == 0")
     # log_message(f"{len(df_target)}", message_path)
 
     # スケーリング
@@ -201,8 +212,8 @@ def Maximum_Membership_Degrees(df, OUT_DIR, gis):
     gis_name = gis.split("_")[0]
     mode_name = gis.split("_")[1]
     os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
-    # df_clean = df.query("label == 'non-walk'")
-    df_clean = df.query("is_walk == 0")
+    df_clean = df.query("label == 'non-walk'")
+    # df_clean = df.query("is_walk == 0")
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.hist(df_clean[f"max_membership_{gis_name}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
     ax.set_title(f"{gis} Distribution of Maximum Membership Degrees")
@@ -211,6 +222,18 @@ def Maximum_Membership_Degrees(df, OUT_DIR, gis):
     ax.grid(True, linestyle="--", alpha=0.5)
     fig.savefig(f'{OUT_DIR}/{mode_name}/{gis_name}_max_membership_histogram.png')
 
+def normal_Maximum_Membership_Degrees(df, OUT_DIR, gis):
+
+    # os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
+    # df_clean = df.query("label == 'non-walk'")
+    df_clean = df.query("is_walk == 0")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(df_clean[f"max_membership_{gis}"], bins=20, color="skyblue", edgecolor="k", alpha=0.7)
+    ax.set_title(f"{gis} Distribution of Maximum Membership Degrees")
+    ax.set_xlabel("Maximum Membership Degree")
+    ax.set_ylabel("Number of Samples")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    fig.savefig(f'{OUT_DIR}/{gis}_max_membership_histogram.png')
 
 def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
     # ---- 可視化用の特徴量 ----
@@ -317,8 +340,8 @@ def fuzzy_cluster_3Dplot(df_clean, OUT_DIR):
 
 def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
     # 特徴量数に応じて行数を自動調整（列数は4固定）
-    df_clean = df.query("is_walk == 0")
-    # df_clean = df.query("label == 'non-walk'")
+    # df_clean = df.query("is_walk == 0")
+    df_clean = df.query("label == 'non-walk'")
     n_features = len(feature_cols)
     ncols = 4
     nrows = int(np.ceil(n_features / ncols)) if n_features > 0 else 1
@@ -341,6 +364,32 @@ def cluster_boxplot(df, feature_cols, OUT_DIR, gis):
 
     fig.tight_layout()
     fig.savefig(f'{OUT_DIR}/{mode_name}/{gis_name}_cluster_fuzzy_boxplot.png')
+
+def normal_cluster_boxplot(df, feature_cols, OUT_DIR, gis):
+    # 特徴量数に応じて行数を自動調整（列数は4固定）
+    df_clean = df.query("is_walk == 0")
+    # df_clean = df.query("label == 'non-walk'")
+    n_features = len(feature_cols)
+    ncols = 4
+    nrows = int(np.ceil(n_features / ncols)) if n_features > 0 else 1
+    
+    # os.makedirs(f"{OUT_DIR}/{mode_name}", exist_ok=True)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
+    axes = np.atleast_1d(axes).ravel()
+
+    for i, col in enumerate(feature_cols):
+        ax = axes[i]
+        sns.boxplot(ax=ax, x=df_clean[f'fuzzy_cluster_{gis}'] + 1, y=col, data=df_clean)
+        ax.set_title(col)
+        if col == "all_distance" or col == "all_time":
+            ax.set_yscale("log")
+
+    # 余ったAxesを非表示（または削除）
+    for j in range(n_features, nrows * ncols):
+        fig.delaxes(axes[j])
+
+    fig.tight_layout()
+    fig.savefig(f'{OUT_DIR}/{gis}_cluster_fuzzy_boxplot.png')
 
 
 def feature_cluster_centroids(df, feature_cols):
@@ -400,52 +449,162 @@ def cluster_pairplot(df, feature_cols, OUT_DIR, gis):
     plt.savefig(f'{OUT_DIR}/cluster_pairplot.png')
 
 
-def map_plot(df, OUT_DIR, gdf_pref, bus_gdf, train_gdf, gis, gis_name):
-    mode_label = df[f'mode_label'].unique().tolist()
-    n_rows = int(np.ceil(len(mode_label) / 2))
-    n_cols = 2
-    fig, axes = plt.subplots(figsize=(10, 10), nrows=n_rows, ncols=n_cols, squeeze=False)
-    nagasaki_gdf_pref = gdf_pref.query("prefecture == '長崎県'", engine='python')
-    for i, mode in enumerate(mode_label):
-        df_cluster = df[df[f'mode_label'] == mode]
-        # log_message(f"{len(df_cluster)}points", message_path)
-        # log_message(f"{mode} {i}", message_path)
-        nagasaki_gdf_pref.plot(
-            ax=axes[i//2, i%2], 
-            color='0.8', 
-            # edgecolor='0.5',
-            # linewidth=3
-            )
-        if mode == "train":
-            train_gdf.plot(
-                ax=axes[i//2, i%2], 
-                color='pink', 
-                linewidth=1.1, 
-                label='Rail Routes'
-                )
-        if mode == "bus":
-            bus_gdf.plot(
-                ax=axes[i//2, i%2], 
-                color='skyblue', 
-                linewidth=1.1, 
-                label='Bus Routes'
-                )
-        df_cluster.plot(
-            ax=axes[i//2, i%2], 
-            color='0.0', 
-            markersize=0.5, 
-            alpha=0.1
-            )
+# def map_plot(df, OUT_DIR, gdf_pref, bus_gdf, train_gdf):
+#     mode_label = df[f'mode_label'].unique().tolist()
+#     n_rows = int(np.ceil(len(mode_label) / 2))
+#     n_cols = 2
+#     fig, axes = plt.subplots(figsize=(10, 10), nrows=n_rows, ncols=n_cols, squeeze=False)
+#     nagasaki_gdf_pref = gdf_pref.query("prefecture == '大阪府'", engine='python')
+#     for i, mode in enumerate(mode_label):
+#         df_cluster = df[df[f'mode_label'] == mode]
+#         # log_message(f"{len(df_cluster)}points", message_path)
+#         # log_message(f"{mode} {i}", message_path)
+#         nagasaki_gdf_pref.plot(
+#             ax=axes[i//2, i%2], 
+#             color='0.8', 
+#             # edgecolor='0.5',
+#             # linewidth=3
+#             )
+#         if mode == "train":
+#             train_gdf.plot(
+#                 ax=axes[i//2, i%2], 
+#                 color='pink', 
+#                 linewidth=1.1, 
+#                 label='Rail Routes'
+#                 )
+#         if mode == "bus":
+#             bus_gdf.plot(
+#                 ax=axes[i//2, i%2], 
+#                 color='skyblue', 
+#                 linewidth=1.1, 
+#                 label='Bus Routes'
+#                 )
+#         df_cluster.plot(
+#             ax=axes[i//2, i%2], 
+#             color='0.0', 
+#             markersize=0.5, 
+#             alpha=0.1
+#             )
         
-        axes[i//2, i%2].set_title(f'{mode} ver.')
-        axes[i//2, i%2].set_axis_off()
-        axes[i//2, i%2].set_xlim(540000, 640000)
-        axes[i//2, i%2].set_ylim(3600000, 3700000)
-        fig.savefig(f'{OUT_DIR}/cluster_map.png')
+#         axes[i//2, i%2].set_title(f'{mode} ver.', fontsize=15)
+#         # axes[i//2, i%2].set_axis_off()
+#         # axes[i//2, i%2].set_xlim(540000, 640000)
+#         # axes[i//2, i%2].set_ylim(3600000, 3700000)
+#         fig.savefig(f'{OUT_DIR}/cluster_map.png')
     
 
-    return df
+#     return df
 
+
+def map_plot(
+    df: gpd.GeoDataFrame,
+    out_dir: str | Path,
+    gdf_pref: gpd.GeoDataFrame,
+    bus_gdf: gpd.GeoDataFrame,
+    train_gdf: gpd.GeoDataFrame,
+    *,
+    prefecture_name: str = "大阪府",
+    mode_label_cols: Optional[Sequence[str]] = None,
+    n_cols: int = 2,
+    # xlim: tuple[float, float] = (550000, 630000),
+    # ylim: tuple[float, float] = (3600000, 3700000),
+    xlim: tuple[float, float] = (1060000, 1120000),
+    ylim: tuple[float, float] = (3800000, 3900000),
+    point_color: str = "0.0",
+    point_markersize: float = 0.5,
+    point_alpha: float = 0.1,
+    pref_color: str = "0.8",
+    train_color: str = "pink",
+    bus_color: str = "skyblue",
+    line_width: float = 1.1,
+) -> gpd.GeoDataFrame:
+    if not isinstance(df, gpd.GeoDataFrame):
+        raise TypeError("df must be a geopandas.GeoDataFrame with a valid geometry column.")
+    if df.geometry is None:
+        raise ValueError("df has no geometry. Please convert to GeoDataFrame with a geometry column.")
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- detect mode-label columns ---
+    if mode_label_cols is None:
+        candidates = [c for c in df.columns if "mode_label" in str(c)]
+        if not candidates:
+            raise ValueError("No columns containing 'mode_label' were found in df.")
+        # Prefer exact match if present
+        mode_label_cols = ["mode_label"] if "mode_label" in candidates else candidates
+
+    # --- prefecture boundary ---
+    nagasaki_gdf_pref = gdf_pref.query("prefecture == @prefecture_name", engine="python")
+    if nagasaki_gdf_pref.empty:
+        raise ValueError(f"gdf_pref has no rows where prefecture == '{prefecture_name}'.")
+    # log_message(f"mode_label_cols: {mode_label_cols}", message_path)
+    log_message(f"df: {df.head()}", message_path)
+    for label_col in mode_label_cols:
+        # dropna to avoid showing "nan" panel
+        log_message(f"label_col: {label_col}", message_path)
+        
+        modes = df[label_col].dropna().unique().tolist()
+        log_message(f"{modes}", message_path)
+        if len(modes) == 0:
+            continue
+
+        n_rows = int(np.ceil(len(modes) / n_cols))
+        fig, axes = plt.subplots(
+            figsize=(10, 10),
+            nrows=n_rows,
+            ncols=n_cols,
+            squeeze=False,
+        )
+
+        for i, mode in enumerate(modes):
+            ax = axes[i // n_cols, i % n_cols]
+
+            df_cluster = df[df[label_col] == mode]
+
+            # base map
+            nagasaki_gdf_pref.plot(ax=ax, color=pref_color)
+
+            # overlays (only when that mode is being shown)
+            
+
+            # points
+            df_cluster.plot(
+                ax=ax,
+                color=point_color,
+                markersize=point_markersize,
+                alpha=point_alpha,
+            )
+            if str(mode) == "train":
+                train_gdf.plot(
+                    ax=ax,
+                    color=train_color,
+                    linewidth=line_width,
+                    label="Rail Routes",
+                )
+            if str(mode) == "bus":
+                bus_gdf.plot(
+                    ax=ax,
+                    color=bus_color,
+                    linewidth=line_width,
+                    label="Bus Routes",
+                )
+
+            ax.set_title(f"{mode}", fontsize=15)
+            ax.set_axis_off()
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
+
+        # turn off unused axes
+        for j in range(len(modes), n_rows * n_cols):
+            axes[j // n_cols, j % n_cols].set_axis_off()
+
+        fig.tight_layout()
+
+        # save one figure per mode-label column
+        safe_name = str(label_col).replace("/", "_")
+        fig.savefig(f"{out_dir}/cluster_map_{safe_name}.png", dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
 def cluster_analysis(df, OUT_DIR):
     df["segment_ratio"] = df["segment_count"] / df["segment_count"].sum()

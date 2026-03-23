@@ -4,17 +4,17 @@
 #$ -cwd
 #$ -V
 #$ -N stay_detection
-#$ -q all.q@Claudette
+#$ -q all.q@Dwight
 #$ -pe smp 10
 #$ -t 1-12
 #$ -tc 3
-#$ -o logs/04_stay/03_tokyo_2022/$TASK_ID.out
-#$ -e logs/04_stay/03_tokyo_2022/$TASK_ID.err
+#$ -o logs/04_stay/09_nagasaki_2019/$TASK_ID.out
+#$ -e logs/04_stay/09_nagasaki_2019/$TASK_ID.err
 
 export OMP_NUM_THREADS=8
-echo "Using place_year: 03_tokyo_2022" >&1
-# Split 03_tokyo_2022 into place and year
-PLACE_YEAR="03_tokyo_2022"
+echo "Using place_year: 09_nagasaki_2019" >&1
+# Split 09_nagasaki_2019 into place and year
+PLACE_YEAR="09_nagasaki_2019"
 PLACE=$(echo "$PLACE_YEAR" | sed 's/_[^_]*$//')  # Gets everything before the last underscore
 YEAR=$(echo "$PLACE_YEAR" | sed 's/.*_//')       # Gets everything after the last underscore
 

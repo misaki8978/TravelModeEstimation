@@ -59,11 +59,11 @@ fig, ax = plt.subplots(figsize=(10, 6))
 ax.scatter(all_time_diffs['time_diff_sec'], all_time_diffs['frequency'], 
            alpha=0.6, color="skyblue", s=10)
 ax.set_title("Time Interval Frequency Distribution")
-ax.set_xlabel("Time Interval (seconds)")
-ax.set_ylabel("Frequency")
+ax.set_xlabel("Time Interval (seconds)", fontsize=17)
+ax.set_ylabel("Frequency", fontsize=17)
 # ax.set_xlim(0, 600)  # 必要なら有効化
-ax.set_xscale("log")
-ax.set_yscale("log")
+# ax.set_xscale("log")
+# ax.set_yscale("log")
 ax.grid(True)
 
 plt.savefig(f"{OUT_DIR}/04_time_diff_distribution.png")

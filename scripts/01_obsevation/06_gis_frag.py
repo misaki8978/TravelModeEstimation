@@ -48,27 +48,27 @@ train_cluster_col = {
    "0": "car", 
    "1": "bus", 
    "2": "train", 
-   "3": "bicycle",
+   "3": "two-wheeler",
    "4": "bike"
    }
 bus_cluster_col = {
    "-1": "walk", 
    "0": "car", 
-   "1": "bicycle", 
+   "1": "two-wheeler", 
    "2": "bus",
    "3": "train"
    }
 other_cluster_col = {
    "-1": "walk", 
    "0": "car", 
-   "1": "bicycle",
+   "1": "two-wheeler",
    "2": "bike"
    }
 mode_color = {
    "walk": "skyblue",
    "car": "red",
    "bus": "yellowgreen",
-   "bicycle": "purple",
+   "two-wheeler": "purple",
    "train": "#ffa500",
    "bike": "green"
 }
@@ -77,14 +77,14 @@ mode_marker = {
    "walk": "D",       # 丸
    "car": "s",        # 四角
    "bus": "^",        # ダイヤ
-   "bicycle": "x",       # 三角
+   "two-wheeler": "x",       # 三角
    "train": "o",       # ×印,
    "bike": "v"     # 三角
 }
 
 # 地方都市 H27ver.
-ref_mode_non_holiday={"bus":3.1, "train":4.3, "bicycle":16.1, "walk":17.8, "car":58.6} #平日
-ref_mode_holiday={"bus":1.7, "train":2.6, "bicycle":11.1, "walk":12.5, "car":72.1} #休日
+ref_mode_non_holiday={"bus":3.1, "train":4.3, "two-wheeler":16.1, "walk":17.8, "car":58.6} #平日
+ref_mode_holiday={"bus":1.7, "train":2.6, "two-wheeler":11.1, "walk":12.5, "car":72.1} #休日
 
 # 三大都市圏 H27ver.
 # ref_mode_non_holiday={"バス":2.3, "鉄道":28.5, "二輪車":16.3, "徒歩・その他":21.5, "車":31.4} #平日
@@ -176,7 +176,7 @@ plot_multi_band_with_reference(
     ref_title="Person Trip Survey",
     ref_mode_share_ja=ref_mode_non_holiday,
     savepath=os.path.join(OUT_DIR, "multi_band_non_holiday_rate_by_mode.png"),
-    figsize=(4,4),  # 文字が詰まる場合は高さを調整
+    figsize=(6,3),  # 文字が詰まる場合は高さを調整
 )
 
 plot_multi_band_with_reference(
@@ -187,7 +187,7 @@ plot_multi_band_with_reference(
     ref_title="Person Trip Survey",
     ref_mode_share_ja=ref_mode_holiday,
     savepath=os.path.join(OUT_DIR, "multi_band_holiday_rate_by_mode.png"),
-    figsize=(4,4),  # 文字が詰まる場合は高さを調整
+    figsize=(6,3),  # 文字が詰まる場合は高さを調整
 )
 
 holiday_rate = holiday_rate_by_mode.set_index("mode_label")

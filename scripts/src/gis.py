@@ -356,7 +356,7 @@ def getDistanceOfPoints(lat1, lon1, lat2, lon2):
 
 def plot_gis_layer(gdf, gis_file, gdf_pref, mode, out_dir, color):
     fig, ax = plt.subplots(figsize=(10, 10))
-    gdf_pref.query("prefecture == '長崎県'", engine='python').plot(ax=ax, color='gray')
+    gdf_pref.query("prefecture == '大阪府'", engine='python').plot(ax=ax, color='gray')
     target_gdf = gdf.query(f"{mode}_frag == 1", engine='python')
     gis_file.plot(ax=ax, color=color[f"{mode}_layer"], linewidth=1, label=mode)
     target_gdf.plot(ax=ax, color=color[mode], markersize=2, alpha=0.7)
@@ -369,14 +369,14 @@ def plot_gis_layer(gdf, gis_file, gdf_pref, mode, out_dir, color):
     plt.close(fig)
 
 
-def plot_gpspoint(df, out_dir):
+def plot_gpspoint(df, pref_gdf, out_dir):
     gdf = gpd.GeoDataFrame(
         df,
         geometry=gpd.points_from_xy(df["longitude_anonymous"], df["latitude_anonymous"]),
         crs="EPSG:4326",
     )
     fig, ax = plt.subplots(figsize=(10, 10))
-    # gdf_pref.query("prefecture == '長崎県'", engine='python').plot(ax=ax, color='gray')
+    pref_gdf.plot(ax=ax, color='gray')
     
     gdf.plot(ax=ax, color='skyblue', markersize=0.4, alpha=0.7)
     # gis_file.plot(ax=ax, color='blue', linewidth=1)

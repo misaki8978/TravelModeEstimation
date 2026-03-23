@@ -13,6 +13,7 @@ PLACE="07_osaka"
 YEAR="2019"
 
 GPS_DIR="$DATA_DIR/processed/010_accuracy/${PLACE}/${YEAR}_weekly"
-GPS_FILE=(${GPS_DIR}/*mode_gps.csv.gz)  
+GPS_FILE=(${GPS_DIR}/1_non*mode_gps.csv.gz) 
+
 
 python3 /home/fukui/workspace/TravelModeEstimation/scripts/010_accuracy/02_cluster_sample.py "${GPS_FILE[@]}"

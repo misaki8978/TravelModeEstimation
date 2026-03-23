@@ -75,13 +75,14 @@ ccdf_array = ccdf(df)
 
 fig, ax = plt.subplots(figsize=(10, 10))
 ax.scatter(frequency_count.index, ccdf_array, marker='o', color='r', s=5)
-ax.set_xlabel('Frequency', fontsize=13)
-ax.set_ylabel('Complementary cumulative probability')
+# ax.set_xlabel('Frequency', fontsize=13)
+# ax.set_ylabel('Complementary cumulative probability')
 ax.set_xscale('log')  # x軸を対数スケールに設定
 ax.set_yscale('log')  # y軸を対数スケールに設定
 ax.set_xlim(left=10**0)
 ax.set_ylim(top=10**0)
+ax.tick_params(axis='both', labelsize=23)
 ax.grid(True)  # グリッドの表示
-ax.set_title('Complementary cumulative probability', fontsize=17)
+# ax.set_title('Complementary cumulative probability', fontsize=17)
 plt.tight_layout()
 plt.savefig(f"{OUT_DIR}/01_plus_ccdf.png")

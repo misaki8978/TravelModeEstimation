@@ -20,12 +20,12 @@ files = sys.argv[1]  # 引数でファイルリストを受け取る
 
 YEAR = files.split("/")[-2]
 PLACE = "_".join(files.split("/")[-3].split("_")[-2:])
-OUT_DIR = f"/home/data/fukui/processed/06_02/{PLACE}/{YEAR}/stops"
+OUT_DIR = f"/home/data/fukui/processed/06_02/{PLACE}/{YEAR}/1_non-stops"
 # OUT_DIR = f"/home/data/fukui/processed/06_02_{PLACE}/{YEAR}/"
 
 # log_message(f"{OUT_DIR}", message_path)
 os.makedirs(OUT_DIR, exist_ok=True)
-OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering/stops"
+OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering/1_non-stops"
 # OUT_FIG = f"/home/data/fukui/outputs/figures/{PLACE}/{YEAR}/06_02_clustering/pre"
 
 # log_message(f"{OUT_FIG}", message_path)
@@ -34,7 +34,7 @@ os.makedirs(f"/home/fukui/workspace/TravelModeEstimation/logs/06_clustering", ex
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/06_clustering/{PLACE}_{YEAR}.txt"
 with gzip.open(files, 'rt') as f:
     df = pd.read_csv(f)\
-        .query("n_points > 3 & max_speed <= 30 & all_time <= 4*60*60 & all_distance <= 40000")\
+        .query("n_points > 3 & max_speed <= 32 & all_time <= 4*60*60 & all_distance <= 40000")\
         
     f.close()
 # log_message(f"{df.columns}", message_path)
@@ -42,7 +42,7 @@ with gzip.open(files, 'rt') as f:
 # log_message(f"{df["label"].value_counts()}", message_path)
 # log_message(f"{len(df)}", message_path)
 # log_message(f"{df['buffer_bus'].describe()}", message_path)
-df_walk = df.query("is_walk == 1")\
+df_walk = df.query("label == 'walk'")\
             .assign(
                 fuzzy_cluster_gis = -1
             )
@@ -50,7 +50,7 @@ log_message(f"{len(df_walk)} walk segments", message_path)
 df_walk.to_csv(f"{OUT_DIR}/walk_gis_cluster.csv.gz", index=False, compression="gzip")
 
 #路線適合確率0.7を境目にデータを3つに分割
-df_train, df_bus, df_other = data_sepa(df, 0.7)
+df_train, df_bus, df_other = data_sepa(df, 0.8)
 log_message(f"near bus segment: {len(df_bus)}", message_path)
 log_message(f"near train segment: {len(df_train)}", message_path)
 log_message(f"other segment: {len(df_other)}", message_path)
@@ -77,8 +77,8 @@ gis_feature_cols = [
         'stop_rate',
         'buffer_train',
         'buffer_bus',
-        'train_stop_proximity_rate',
-        'bus_stop_proximity_rate',
+        # 'train_stop_proximity_rate',
+        # 'bus_stop_proximity_rate',
         # 'rail_flag',
         # 'bus_flag'
         ]

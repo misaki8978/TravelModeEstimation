@@ -4,15 +4,16 @@
 #$ -cwd
 #$ -V
 #$ -N gis_features
-#$ -q all.q@Cheryl
+#$ -q all.q@Dwight
 #$ -pe smp 8
 #$ -o logs/09_gis/gis_features.out
 #$ -e logs/09_gis/gis_features.err
 
-PLACE="07_osaka"
+PLACE="09_nagasaki"
 YEAR="2019"
 
-INPUT_DIR="$DATA_DIR/processed/05_01_re/${PLACE}/${YEAR}_weekly"
+# INPUT_DIR="$DATA_DIR/processed/05_01_re/${PLACE}/${YEAR}_weekly"
+INPUT_DIR="$DATA_DIR/processed/09_04_${PLACE}/${YEAR}_weekly"
 ROUTE_DIR="$DATA_DIR/interim/GIS_geojson/route"
 STOP_DIR="$DATA_DIR/interim/GIS_geojson/stop"
 

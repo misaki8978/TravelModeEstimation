@@ -29,12 +29,18 @@ warnings.filterwarnings('ignore')
 # plt.rcParams['font.family'] = 'Meiryo'
 message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_010_accuracy.txt"
 
-def mode_change(df, segment_df, cluster_col, gis):
+def mode_change(df, segment_df, cluster_col, gis_cluster_col, gis, version):
     df = df.merge(segment_df, on=['hashed_adid', 'segment_month_id'], how='inner')
-    if gis == "other":
-        df['mode_label'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
-        segment_df['mode_label'] = segment_df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+    if version == "normal":
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+        segment_df[f'mode_label_{version}'] = segment_df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+        df[f'mode_label_{version}_gis'] = df['fuzzy_cluster_gis'].astype(str).map(gis_cluster_col)
+        segment_df[f'mode_label_{version}_gis'] = segment_df['fuzzy_cluster_gis'].astype(str).map(gis_cluster_col)
+        
+    elif gis == "other":
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
+        segment_df[f'mode_label_{version}'] = segment_df['fuzzy_cluster_normal'].astype(str).map(cluster_col)
     else:
-        df['mode_label'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
-        segment_df['mode_label'] = segment_df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
+        df[f'mode_label_{version}'] = df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
+        segment_df[f'mode_label_{version}'] = segment_df['fuzzy_cluster_gis'].astype(str).map(cluster_col)
     return df, segment_df

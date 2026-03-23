@@ -9,14 +9,18 @@
 #$ -o logs/seg_analysis.out
 #$ -e logs/seg_analysis.err
 
-PLACE="09_nagasaki"
+PLACE="07_osaka"
 YEAR="2019"
 
-# INPUT_DIR="$DATA_DIR/processed/05_01_${PLACE}_replay/${YEAR}_weekly_basic"
-FILTERED_DIR="$DATA_DIR/processed/05_01_re/${PLACE}/${YEAR}_weekly"
-INPUT_FILES=(${FILTERED_DIR}/*.csv.gz)
+CLUSTER_DIR="$DATA_DIR/processed/09_04_re/${PLACE}/${YEAR}_weekly/"
+# # FILTERED_DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
+CLUSTER_FILES=(${CLUSTER_DIR}*nonwalk.csv.gz)
 
-python3 /home/fukui/workspace/TravelModeEstimation/scripts/01_obsevation/03_segment_analysis.py "${INPUT_FILES[@]}"
+# CLUSTER_DIR="$DATA_DIR/processed/010_accuracy/${PLACE}/${YEAR}_weekly/normal"
+# # FILTERED_DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"
+# CLUSTER_FILES=(${CLUSTER_DIR}*segment.csv.gz)
+
+python3 /home/fukui/workspace/TravelModeEstimation/scripts/01_obsevation/03_segment_analysis.py "${CLUSTER_FILES[@]}"
 
 
 

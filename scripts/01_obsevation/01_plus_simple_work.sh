@@ -9,7 +9,7 @@
 #$ -o logs/simple_work.out
 #$ -e logs/simple_work.err
 
-PLACE="09_nagasaki"
+PLACE="07_osaka"
 YEAR="2019"
 
 FILTERED_DIR="$DATA_DIR/interim/agg_before_filter/${PLACE}_${YEAR}/merged"

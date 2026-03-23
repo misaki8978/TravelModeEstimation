@@ -18,7 +18,7 @@ echo "Using place_year: $PLACE_YEAR" >&1
 # DIR="$COMMON_DIR/BLWSakigake/${PLACE_YEAR}"  #本番
 # DIR="$DATA_DIR/processed/04_01_${PLACE}/${YEAR}_weekly"  #nagasaki ver.
 # DIR="$DATA_DIR/interim/multithread/04_01_${PLACE}_${YEAR}_weekly/hariharan/"  #hariharan ver.
-DIR="$DATA_DIR/interim/multithread/04_01_${PLACE_YEAR}_weekly/gpt/"  #osaka ver.
+DIR="$DATA_DIR/interim/multithread/04_01_${PLACE_YEAR}_weekly/new/"  #osaka ver.
 
 # チャンクファイルを置くフォルダ
 CHUNK_DIR="$DATA_DIR/interim/chunks/${PLACE_YEAR}_segment"

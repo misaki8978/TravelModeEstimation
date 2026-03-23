@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import gzip
 import sys
 import warnings
+import numpy as np
 plt.rcParams['font.size'] = 15
 # import japanize_matplotlib
 
@@ -13,26 +14,43 @@ from log_message import log_message
 
 warnings.filterwarnings('ignore')
 
-message_path = f"/home/fukui/workspace/TravelModeEstimation/logs/log_01_ob_01_weekly_data.txt"
+
 
 files = sys.argv[1:]  # 引数でファイルリストを受け取る
 
-df = pd.read_csv(files[0], compression='gzip')
-log_message(f"{len(df)}", message_path)
-log_message(f"{df.columns}", message_path)
-log_message(f"{df[df["bus_stop_proximity_rate"]!=0]["bus_stop_proximity_rate"].describe()}", message_path)
-log_message(f"{df[df["train_stop_proximity_rate"]!=0]["train_stop_proximity_rate"].describe()}", message_path)
+# df = pd.read_csv(files[0], compression='gzip')
+# log_message(f"{len(df)}", message_path)
+# log_message(f"{df.columns}", message_path)
+# log_message(f"{df[df["bus_stop_proximity_rate"]!=0]["bus_stop_proximity_rate"].describe()}", message_path)
+# log_message(f"{df[df["train_stop_proximity_rate"]!=0]["train_stop_proximity_rate"].describe()}", message_path)
 
 # _path = os.path.dirname(files[0])
-# path_parts = _path.split("/")
-# # 最後の2つの要素を取得
-# year = path_parts[-1]
-# place = path_parts[-2]
+path_parts = files[0].split("/")
+# 最後の2つの要素を取得
+place_year = path_parts[-3]
 
 # year_only = year.split("_")[0]
+log_path = f"/home/fukui/workspace/TravelModeEstimation/logs/01_observation/{place_year}"
+os.makedirs(log_path, exist_ok=True)
+message_path = f"{log_path}/01_weekly_data.txt"
+OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_weekly_data/{place_year}"
+os.makedirs(OUT_DIR, exist_ok=True)
 
-# OUT_DIR = f"/home/data/fukui/outputs/figures/01_observation/01_weekly_data/{place}/{year}"
-# os.makedirs(OUT_DIR, exist_ok=True)
+for file in files:
+    version = file.split("/")[-1].split("_")[:-2]
+    version = "_".join(version)
+    log_message(f"version: {version}", message_path)
+    df = pd.read_csv(file, compression="gzip")
+    log_message(f"segment count:{(df.shape[0])}", message_path)
+    log_message(f"buffer_train >= 0.7: {df[df['buffer_train']>=0.7].shape[0]}", message_path)
+    log_message(f"buffer_bus >= 0.7: {df[df['buffer_bus']>=0.7].shape[0]}", message_path)
+    log_message(f"buffer_train >= 0.7 & buffer_bus >= 0.7: {df[(df['buffer_train']>=0.7) & (df['buffer_bus']>=0.7)].shape[0]}", message_path)
+    log_message(f"buffer_train >= 0.7 & buffer_bus < 0.7: {df[(df['buffer_train']>=0.7) & (df['buffer_bus']<0.7)].shape[0]}", message_path)
+    log_message(f"buffer_train < 0.7 & buffer_bus >= 0.7: {df[(df['buffer_train']<0.7) & (df['buffer_bus']>=0.7)].shape[0]}", message_path)
+    log_message(f"buffer_train < 0.7 & buffer_bus < 0.7: {df[(df['buffer_train']<0.7) & (df['buffer_bus']<0.7)].shape[0]}", message_path)
+    label_cols = [c for c in df.columns if 'mode_label' in c] 
+    for label_col in label_cols:
+        log_message(f"{label_col}: {df[label_col].value_counts()}", message_path)
 
 
 # weekly_records = []
@@ -40,18 +58,47 @@ log_message(f"{df[df["train_stop_proximity_rate"]!=0]["train_stop_proximity_rate
 #     try:
 #         with gzip.open(file, 'rt') as f:
 #             df = pd.read_csv(f)
-#             # log_message(f"{(df.shape[0])}", message_path)
+#             log_message(f"{(df.shape[0])}", message_path)
 #             weekly_records.append(df)
 #             f.close()
 #     except FileNotFoundError:
 #         log_message(f"ファイル {file} が見つかりませんでした。", message_path)
 
+# log_message(f"weekly_records: {len(weekly_records)}", message_path)
 # df = pd.concat(weekly_records, ignore_index=True)
 
-# log_message(f"{df.shape[0]} rows", message_path)
-# # log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
-# log_message(f"{df['count'].sum()} GPS points", message_path)
+# # log_message(f"{df.shape[0]} rows", message_path)
+# # # log_message(f"{df.query('count < 7000').shape[0]} rows", message_path)
+# # log_message(f"{df['count'].sum()} GPS points", message_path)
 # log_message(f"{len(df['hashed_adid'].unique())} users", message_path)
+# log_message(f"{len(df)} GPS points", message_path)
+# bin_width = 100
+
+# # ビンの区切りを作成 (0から最大値まで1000刻み)
+# # 最大値を含むように + bin_width をしています
+# # bins = range(0, df['count'].max() + bin_width, bin_width)
+# bins = range(0, 15000 + bin_width, bin_width)
+
+# plt.figure(figsize=(10, 6))
+
+# # ヒストグラムの描画
+# # bins引数に作成した区切りリストを渡します
+# plt.hist(df['count'], bins=bins, edgecolor='black', alpha=0.7)
+
+# # グラフの装飾
+# # plt.title('Histogram of Count Frequency (Bin Size = 100)')
+# plt.xlabel('Count', fontsize=17)
+# plt.ylabel('Frequency', fontsize=17)
+
+# # X軸の目盛りをビンの区切りに合わせて表示（見やすくするため回転）
+# plt.xticks(bins, fontsize=15)
+# plt.xticks(np.arange(1000, 15000 + 2000, 2000))
+# plt.yscale('log')
+# plt.grid(axis='y', alpha=0.5)
+
+# # 表示
+# plt.tight_layout()
+# plt.savefig(f"{OUT_DIR}/01_weekly_data_histogram.png")
 
 
 # # 週ごとのアクティブユーザー数

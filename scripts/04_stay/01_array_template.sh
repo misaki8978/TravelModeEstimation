@@ -4,7 +4,7 @@
 #$ -cwd
 #$ -V
 #$ -N stay_detection
-#$ -q all.q@Claudette
+#$ -q all.q@Dwight
 #$ -pe smp 10
 #$ -t 1-__NUM__
 #$ -tc 3
